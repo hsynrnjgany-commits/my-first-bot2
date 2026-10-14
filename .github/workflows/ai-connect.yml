@@ -11,15 +11,14 @@ integration-check:
 name: Verify Integration Environment
 runs-on: ubuntu-latest
 timeout-minutes: 5
-
 steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+- name: Checkout Repository
+uses: actions/checkout@v4
 
   - name: Check Python Environment
     run: python --version
 
-  - name: Verify Repository Access
+  - name: Verify Safe Mode
     run: |
       echo "Repository access verified."
       echo "GitHub Actions environment is available."
