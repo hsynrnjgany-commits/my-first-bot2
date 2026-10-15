@@ -1,4 +1,4 @@
-name: AI Connect - Safe Environment Check
+name: AI Integration Check
 
 on:
   workflow_dispatch:
@@ -7,25 +7,19 @@ permissions:
   contents: read
 
 jobs:
-  check-integration:
+  integration-check:
     name: Verify Integration Environment
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check Python Environment
-        run: python --version
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      - name: Verify Safe Mode
-        run: |
-          echo "Repository access verified."
-          echo "GitHub Actions environment is available."
-          echo "External AI connections are not configured."
-          echo "Real trading is disabled."
-          echo "Paper-only mode remains active."
-
-      - name: Finish Safe Check
-        run: echo "AI integration readiness check completed."
+      - name: Run public data fetcher
+        run: python src/data/fetch_public.py
