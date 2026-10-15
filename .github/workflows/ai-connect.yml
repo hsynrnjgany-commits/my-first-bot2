@@ -1,5 +1,5 @@
 
-name: MARI AI Integration Test
+name: MARI Toobit Public API Test
 
 on:
   workflow_dispatch:
@@ -8,36 +8,37 @@ on:
       - ".github/workflows/ai-connect.yml"
 
 jobs:
-  public-api-test:
+  toobit-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Test public API
+      - name: Test Toobit Public API
         run: |
           python - <<'PY'
           import json
           import urllib.request
 
-          print("MARI AI INTEGRATION TEST")
+          url = "https://api.toobit.com/api/v1/time"
+
+          print("MARI TOOBIT CONNECTION TEST")
           print("Mode: READ ONLY")
           print("Live orders: DISABLED")
 
-          url = "https://api.binance.com/api/v3/time"
-          request = urllib.request.Request(
-              url,
-              headers={"User-Agent": "MARI-Public-Data-Test"}
-          )
+          try:
+              request = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "MARI-Public-Data-Test"}
+              )
 
-          with urllib.request.urlopen(request, timeout=10) as response:
-              data = json.loads(response.read().decode("utf-8"))
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  data = json.loads(response.read().decode("utf-8"))
 
-          print("Public API connection: SUCCESS")
-          print("Server time (ms):", data["serverTime"])
-          print("Test completed successfully.")
+              print("TOOBIT API: SUCCESS")
+              print("Server response:", data)
+
+          except Exception as error:
+              print("TOOBIT API: FAILED")
+              print(type(error).__name__, str(error)[:250])
+              raise
+
+          print("Test completed.")
           PY
-          
