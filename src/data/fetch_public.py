@@ -1,33 +1,28 @@
 import json
 import urllib.request
-from datetime import datetime, timezone
 
-URL = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"
+URL = "https://api.binance.com/api/v3/time"
 
 def main():
-    print("=== MARI MARKET BOT ===")
-    print("Mode: READ ONLY | PAPER ONLY")
-    print("Live orders: DISABLED")
+print("MARI AI INTEGRATION TEST")
+print("Mode: READ ONLY")
+print("Live orders: DISABLED")
 
-    try:
-        request = urllib.request.Request(
-            URL,
-            headers={"User-Agent": "MariMarketBot/1.0"}
-        )
+request = urllib.request.Request(
+    URL,
+    headers={"User-Agent": "MARI-Public-Data-Test"}
+)
 
-        with urllib.request.urlopen(request, timeout=15) as response:
-            data = json.loads(response.read().decode("utf-8"))
+with urllib.request.urlopen(request, timeout=10) as response:
+    data = json.loads(response.read().decode("utf-8"))
 
-        print("Time UTC:", datetime.now(timezone.utc).isoformat())
-        print("Symbol:", data["symbol"])
-        print("BTC Price USDT:", data["price"])
-        print("Public market data: OK")
+print("Public API connection: SUCCESS")
+print("Server time (ms):", data["serverTime"])
+print("Test completed successfully.")
 
-    except Exception as error:
-        print("Market data error:", str(error))
-        raise
-
-    print("Bot test completed successfully.")
-
-if __name__ == "__main__":
-    main()
+if name == "main":
+try:
+main()
+except Exception as error:
+print("TEST FAILED:", type(error).name, str(error))
+raise
