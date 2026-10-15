@@ -1,25 +1,24 @@
-name: AI Integration Check
 
-on:
-  workflow_dispatch:
+import urllib.request
 
-permissions:
-  contents: read
+URL = "https://api.binance.com/api/v3/time"
 
-jobs:
-  integration-check:
-    name: Verify Integration Environment
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+def main():
+print("MARI AI INTEGRATION TEST")
+print("Mode: READ ONLY")
+print("Live orders: DISABLED")
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+request = urllib.request.Request(
+    URL,
+    headers={"User-Agent": "MARI-Public-Data-Test"}
+)
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+with urllib.request.urlopen(request, timeout=10) as response:
+    data = json.loads(response.read().decode("utf-8"))
 
-      - name: Run public data fetcher
-        run: python src/data/fetch_public.py
+print("Public API connection: SUCCESS")
+print("Server time (ms):", data["serverTime"])
+print("Test completed successfully.")
+
+if name == "main":
+main(
