@@ -1,24 +1,42 @@
 
-import urllib.request
+name: MARI AI Integration Test
 
-URL = "https://api.binance.com/api/v3/time"
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/ai-connect.yml"
 
-def main():
-print("MARI AI INTEGRATION TEST")
-print("Mode: READ ONLY")
-print("Live orders: DISABLED")
+jobs:
+  public-api-test:
+    runs-on: ubuntu-latest
 
-request = urllib.request.Request(
-    URL,
-    headers={"User-Agent": "MARI-Public-Data-Test"}
-)
+    steps:
+      - name: Check Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-with urllib.request.urlopen(request, timeout=10) as response:
-    data = json.loads(response.read().decode("utf-8"))
+      - name: Test public API
+        run: |
+          python - <<'PY'
+          import json
+          import urllib.request
 
-print("Public API connection: SUCCESS")
-print("Server time (ms):", data["serverTime"])
-print("Test completed successfully.")
+          print("MARI AI INTEGRATION TEST")
+          print("Mode: READ ONLY")
+          print("Live orders: DISABLED")
 
-if name == "main":
-main(
+          url = "https://api.binance.com/api/v3/time"
+          request = urllib.request.Request(
+              url,
+              headers={"User-Agent": "MARI-Public-Data-Test"}
+          )
+
+          with urllib.request.urlopen(request, timeout=10) as response:
+              data = json.loads(response.read().decode("utf-8"))
+
+          print("Public API connection: SUCCESS")
+          print("Server time (ms):", data["serverTime"])
+          print("Test completed successfully.")
+          PY
