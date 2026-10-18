@@ -25,14 +25,4 @@ try:
 
         for item in symbols[:5]:
             print(
-                item.get("symbol", "UNKNOWN"),
-                item.get("status", "UNKNOWN")
-            )
-    else:
-        print("Unexpected response format")
-
-except Exception as error:
-    print("MARKET DATA TEST FAILED")
-    print(type(error).__name__, str(error))
-
-print("Test completed")
+                item.get
