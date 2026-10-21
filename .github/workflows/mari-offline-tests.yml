@@ -1,0 +1,28 @@
+# MARI — Offline Test Suite (no network, no secrets, no orders)
+# قرارداد بند ۶ دستور: بررسی کد + آزمون‌های آفلاین؛ شکست = قرمز؛ هیچ سفارشی در کار نیست.
+
+name: MARI Offline Tests
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Syntax check all Python files (compileall)
+        run: python -m compileall -q src tests
+
+      - name: Run offline test suite
+        run: python -m unittest discover -s tests -v

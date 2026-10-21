@@ -1,0 +1,33 @@
+# MARI — Live Public Data Check (MANUAL ONLY — never runs automatically)
+# این جاب فقط با دست انسان اجرا می‌شود (workflow_dispatch) و یک درخواست READ ONLY به
+# endpoint عمومی می‌زند. خطای شبکه/زیرساخت «موفقیت» شمرده نمی‌شود: صریحاً INCONCLUSIVE
+# ثبت می‌شود؛ فقط خطای منطق/قرارداد قرمز می‌شود. هیچ سفارشی در کار نیست.
+
+name: MARI Live Public Data Check (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-public-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run market discovery (READ ONLY, one request)
+        run: |
+          python src/market_discovery.py
+          code=$?
+          if [ "$code" -eq 10 ]; then
+            echo "::warning::INCONCLUSIVE — network/environment error. NOT a pass."
+            exit 0
+          fi
+          exit "$code"
