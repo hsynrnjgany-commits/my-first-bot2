@@ -1,119 +1,136 @@
 {
-  "cycle_id": "2dde7cf1cbd7",
-  "generated_at": "2026-10-22T22:51:58.843Z",
-  "elapsed_ms": 107142,
-  "tasks_total": 51,
-  "tasks_executed": 51,
-  "tasks_skipped_duplicate": 0,
-  "events_collected": 159,
+  "cycle_id": "14674168378c",
+  "generated_at": "2026-10-22T23:20:18.565Z",
+  "elapsed_ms": 0,
+  "tasks_total": 52,
+  "tasks_executed": 0,
+  "tasks_skipped_duplicate": 52,
+  "events_collected": 0,
   "errors": [],
   "health": {
     "D": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:12.869Z"
+      "last_ok": "2026-10-22T23:02:50.937Z"
     },
     "E": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:12.869Z"
+      "last_ok": "2026-10-22T23:02:50.937Z"
     },
     "C": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:12.870Z"
+      "last_ok": "2026-10-22T23:02:50.938Z"
     },
     "F": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:12.870Z"
+      "last_ok": "2026-10-22T23:02:50.939Z"
     },
     "G": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:13.020Z"
+      "last_ok": "2026-10-22T23:02:51.200Z"
     },
     "H": {
       "status": "OK",
-      "runs_ok": 37,
+      "runs_ok": 45,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:13.020Z"
+      "last_ok": "2026-10-22T23:02:51.200Z"
     },
     "M": {
+      "status": "OK",
+      "runs_ok": 7,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T23:02:51.209Z"
+    },
+    "I": {
       "status": "OK",
       "runs_ok": 6,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:50:13.027Z"
-    },
-    "I": {
-      "status": "OK",
-      "runs_ok": 5,
-      "runs_failed": 0,
-      "last_error": null,
-      "retries_used": 0,
-      "last_ok": "2026-10-22T22:51:58.843Z"
+      "last_ok": "2026-10-22T23:04:51.707Z"
     },
     "K": {
       "status": "OK",
-      "runs_ok": 5,
+      "runs_ok": 6,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-22T22:51:58.855Z"
+      "last_ok": "2026-10-22T23:05:17.565Z"
+    },
+    "N": {
+      "status": "OK",
+      "runs_ok": 1,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T23:05:17.557Z"
     }
   },
   "source_version": "stage1+fleet/1.0",
   "method": "orchestrator_cycle/v1",
   "safety": "READ_ONLY | PAPER_ONLY | NO_LIVE_ORDERS",
-  "portfolio_risk_events": 2,
-  "onchain_events": 16,
+  "portfolio_risk_events": 0,
+  "onchain_events": 0,
+  "global_core_events": 0,
+  "judgment_counts": {
+    "total": 1390,
+    "price_rising": 187,
+    "price_falling": 610,
+    "uptrend_confirmed": 0,
+    "uptrend_rejected": 8,
+    "uptrend_unverified": 792,
+    "opportunity": 0,
+    "rejected": 590
+  },
   "integrity_findings": 0,
   "evaluator_global": {
-    "n": 1,
+    "n": 0,
     "min_samples_required": 30,
-    "profit_factor": 0.0,
-    "win_rate": 0.0,
-    "avg_net_pct": -1.2,
+    "profit_factor": "UNDEFINED_NO_LOSSES",
+    "win_rate": null,
+    "avg_net_pct": null,
     "max_drawdown_curve": 0.0,
-    "avg_mfe_pct": 0.161766,
-    "avg_mae_pct": 1.075269,
+    "avg_mfe_pct": null,
+    "avg_mae_pct": null,
     "exit_mix": {
       "TP": 0,
-      "SL": 1,
+      "SL": 0,
       "OPEN": 0
     },
     "concentration": {
-      "hhi": 1.0,
-      "top_symbol": "SOLUSDT",
-      "top_share": 1.0,
-      "symbols": {
-        "SOLUSDT": -1.2
-      }
+      "hhi": 0.0,
+      "top_symbol": null,
+      "top_share": 0.0,
+      "symbols": {}
     },
     "t_stat": null,
     "kelly_fraction_paper": null,
     "walk_forward": {
       "status": "INSUFFICIENT_EVIDENCE",
-      "n": 1,
+      "n": 0,
       "required": 20
     },
     "validation_status": "INSUFFICIENT_EVIDENCE",
@@ -165,7 +182,7 @@
   "universe": {
     "count": 1068,
     "source": "toobit.ticker24/v1",
-    "asof": "2026-10-22T22:50:08.074Z"
+    "asof": "2026-10-22T23:20:14.978Z"
   },
   "cumulative_health": true
 }

@@ -6,6 +6,7 @@
 
 import argparse
 import importlib.util
+import json
 import os
 import sys
 
@@ -15,6 +16,7 @@ from .crossmarket import CrossMarketCluster
 from .derivatives import DerivativesCluster
 from .evaluator import evaluate, evaluation_message, simulate_trades
 from .integrity import audit_candles
+from .judgment import judge_cycle
 from .liquidity import LiquidityCluster
 from .onchain import OnchainCluster
 from .orchestrator import Orchestrator
@@ -186,6 +188,23 @@ def main(argv=None) -> int:
     report["global_core_events"] = sum(1 for e in events
                                        if e.get("cluster_id") == "N")
 
+    # ۴-ج) موتور داوری ۴وضعیتی (بند ۴ دستور C): ردیف‌های دفتر جهانی خوشهٔ N
+    # + کندل‌های بستهٔ پاک همین چرخه → چهار وضعیت مستقل؛ نقض استقلال = خرابی بلند
+    snap_path = os.path.join(state_dir, "global-assets-snapshot.json")
+    reg_rows = []
+    if os.path.exists(snap_path):
+        try:
+            with open(snap_path, encoding="utf-8") as fh:
+                reg_rows = (json.load(fh) or {}).get("rows") or []
+        except (OSError, ValueError):
+            reg_rows = []  # اسنپ‌شات ناسالم — داوری صادقانه روی صفر انجام می‌شود
+    else:
+        print("  [judgment] اسنپ‌شات دفتر جهانی غایب — داوری این چرخه صفرِ صادقانه است")
+    judg = judge_cycle(reg_rows, candles_map, asof_ms=max_asof,
+                       state_dir=state_dir)
+    events.extend([judg["event"]])
+    report["judgment_counts"] = judg["summary"]["counts"]
+
     # ۵) ماندگاری چرخه + یافته‌های L (dedup توسط قرارداد)
     report["integrity_findings"] = len(integrity_findings)
     report["evaluator_global"] = global_metrics
@@ -207,6 +226,11 @@ def main(argv=None) -> int:
               f"(ok={h['runs_ok']} fail={h['runs_failed']})")
     print(f"  کشف جهانی N: {report.get('global_core_events', 0)} رویداد "
           f"(پوشش و پهنای بازار)")
+    jc = report.get("judgment_counts") or {}
+    print(f"  داوری ۴وضعیتی: مجموع {jc.get('total', 0)} | رشد قیمت "
+          f"{jc.get('price_rising', 0)} | روند تأیید "
+          f"{jc.get('uptrend_confirmed', 0)} | فرصت "
+          f"{jc.get('opportunity', 0)} | ردشده {jc.get('rejected', 0)}")
     print(f"رویداد: {len(events)} | نوشته‌شدهٔ نو: {saved['written']} | "
           f"تکرار ردشده: {saved['duplicates_skipped']} | "
           f"ارزیاب نو: {eval_res['written']}")
