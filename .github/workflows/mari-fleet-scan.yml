@@ -1,0 +1,48 @@
+# MARI — Fleet Scan (MANUAL ONLY — never runs automatically)
+# چرخهٔ کامل ناوگان: کشف نماد → سلامت داده → خوشه‌های تخصصی → ارزیاب کاغذی.
+# فقط درخواست‌های GET عمومی و بی‌کلید؛ هیچ سفارشی، هیچ رازی. خروج ۱۰ یعنی
+# INCONCLUSIVE (شبکه/محیط) و شکست شمرده نمی‌شود؛ خروج ۲۰/۳۰ واقعاً قرمز است.
+
+name: MARI Fleet Scan (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbols:
+        description: 'تعداد نماد پربحجم برای اسکن'
+        default: '8'
+      interval:
+        description: 'بازهٔ کندل (15m/1h/4h/1d)'
+        default: '1h'
+
+permissions:
+  contents: read
+
+jobs:
+  fleet-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run fleet scan (READ ONLY | PAPER ONLY)
+        run: |
+          python -m src.fleet.scan --symbols "${{ github.event.inputs.symbols || '8' }}" --interval "${{ github.event.inputs.interval || '1h' }}"
+          code=$?
+          if [ "$code" -eq 10 ]; then
+            echo "::warning::INCONCLUSIVE — network/environment error. NOT a pass."
+            exit 0
+          fi
+          exit "$code"
+
+      - name: Upload fleet ledger artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mari-fleet-scan
+          path: data/fleet/
+          retention-days: 14
