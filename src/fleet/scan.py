@@ -18,6 +18,7 @@ from .integrity import audit_candles
 from .liquidity import LiquidityCluster
 from .onchain import OnchainCluster
 from .orchestrator import Orchestrator
+from .global_market import GlobalMarketCluster
 from .quant import QuantCluster
 from .risk import PortfolioRiskCluster
 from .sessions import SessionCluster
@@ -130,6 +131,11 @@ def main(argv=None) -> int:
         "cluster_id": "I", "symbol": "GLOBAL", "candles": None,
         "ctx": {"interval": args.interval, "data_asof_ms": max_asof},
     })
+    # خوشهٔ N (WORLD MARKET CORE): کشف جهانی + پهنای بازار — یک وظیفه در چرخه
+    tasks.append({
+        "cluster_id": "N", "symbol": "GLOBAL", "candles": None,
+        "ctx": {"interval": args.interval, "data_asof_ms": max_asof},
+    })
 
     # ۳) اجرای چرخه از طریق Orchestrator (ایزوله، ضدتکرار، با تلاش مجدد محدود)
     orch = Orchestrator(state_dir=state_dir)
@@ -137,7 +143,8 @@ def main(argv=None) -> int:
                     SessionCluster(), DerivativesCluster(),
                     CrossMarketCluster(), QuantCluster(),
                     OnchainCluster(state_dir=state_dir),
-                    PortfolioRiskCluster()):
+                    PortfolioRiskCluster(),
+                    GlobalMarketCluster(state_dir=state_dir)):
         orch.register(cluster)
     result = orch.run_cycle(tasks)
     events = list(result["events"]) + integrity_findings
@@ -176,6 +183,8 @@ def main(argv=None) -> int:
     report["tasks_skipped_duplicate"] += k_report["tasks_skipped_duplicate"]
     report["portfolio_risk_events"] = len(k_result["events"])
     report["onchain_events"] = sum(1 for e in events if e.get("cluster_id") == "I")
+    report["global_core_events"] = sum(1 for e in events
+                                       if e.get("cluster_id") == "N")
 
     # ۵) ماندگاری چرخه + یافته‌های L (dedup توسط قرارداد)
     report["integrity_findings"] = len(integrity_findings)
@@ -196,6 +205,8 @@ def main(argv=None) -> int:
     for cid, h in report["health"].items():
         print(f"  خوشهٔ {cid}: {h['status']} "
               f"(ok={h['runs_ok']} fail={h['runs_failed']})")
+    print(f"  کشف جهانی N: {report.get('global_core_events', 0)} رویداد "
+          f"(پوشش و پهنای بازار)")
     print(f"رویداد: {len(events)} | نوشته‌شدهٔ نو: {saved['written']} | "
           f"تکرار ردشده: {saved['duplicates_skipped']} | "
           f"ارزیاب نو: {eval_res['written']}")
