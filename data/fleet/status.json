@@ -1,0 +1,169 @@
+{
+  "cycle_id": "07300900a2e9",
+  "generated_at": "2026-10-22T20:36:12.870Z",
+  "elapsed_ms": 0,
+  "tasks_total": 51,
+  "tasks_executed": 0,
+  "tasks_skipped_duplicate": 51,
+  "events_collected": 0,
+  "errors": [],
+  "health": {
+    "D": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:16.666Z"
+    },
+    "E": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:16.666Z"
+    },
+    "C": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:16.667Z"
+    },
+    "F": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:16.667Z"
+    },
+    "G": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:51.862Z"
+    },
+    "H": {
+      "status": "OK",
+      "runs_ok": 29,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:29:51.863Z"
+    },
+    "M": {
+      "status": "OK",
+      "runs_ok": 5,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:17:59.281Z"
+    },
+    "I": {
+      "status": "OK",
+      "runs_ok": 4,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:20:06.027Z"
+    },
+    "K": {
+      "status": "OK",
+      "runs_ok": 4,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-22T20:20:06.034Z"
+    }
+  },
+  "source_version": "stage1+fleet/1.0",
+  "method": "orchestrator_cycle/v1",
+  "safety": "READ_ONLY | PAPER_ONLY | NO_LIVE_ORDERS",
+  "portfolio_risk_events": 0,
+  "onchain_events": 0,
+  "integrity_findings": 0,
+  "evaluator_global": {
+    "n": 0,
+    "min_samples_required": 30,
+    "profit_factor": "UNDEFINED_NO_LOSSES",
+    "win_rate": null,
+    "avg_net_pct": null,
+    "max_drawdown_curve": 0.0,
+    "avg_mfe_pct": null,
+    "avg_mae_pct": null,
+    "exit_mix": {
+      "TP": 0,
+      "SL": 0,
+      "OPEN": 0
+    },
+    "concentration": {
+      "hhi": 0.0,
+      "top_symbol": null,
+      "top_share": 0.0,
+      "symbols": {}
+    },
+    "t_stat": null,
+    "kelly_fraction_paper": null,
+    "walk_forward": {
+      "status": "INSUFFICIENT_EVIDENCE",
+      "n": 0,
+      "required": 20
+    },
+    "validation_status": "INSUFFICIENT_EVIDENCE",
+    "method": "paper_simulator_v1/tp2_sl1_fee01",
+    "note": "شبیه‌سازی کاغذی روی دادهٔ تاریخی؛ UNVALIDATED یعنی حتی آزمون خارج از نمونه/Walk-Forward هنوز به قضاوت نرسیده — هیچ ادعای سودآوری وجود ندارد"
+  },
+  "klines_meta": {
+    "BTCUSDT": {
+      "ok": true,
+      "source": "binance",
+      "candles": 200
+    },
+    "ETHUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "SOLUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "ZECUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "XRPUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "BNBUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "NEARUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
+    "DOGEUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    }
+  },
+  "universe": {
+    "count": 1068,
+    "source": "toobit.ticker24/v1",
+    "asof": "2026-10-22T20:33:16.564Z"
+  },
+  "cumulative_health": true
+}

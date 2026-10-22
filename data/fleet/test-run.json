@@ -1,0 +1,22 @@
+{
+ "schema": "mari.fleet.test-run/v1",
+ "mode": "READ ONLY | PAPER ONLY | NO LIVE ORDERS",
+ "ran_at_utc": "2026-10-22T20:38:13+00:00",
+ "runner": "pytest (offline, no network)",
+ "command": "python -m pytest tests/ -q",
+ "summary": "128 passed in 0.40s",
+ "passed": true,
+ "files": [
+  "__pycache__",
+  "fleet_loader.py",
+  "test_fleet_clusters.py",
+  "test_fleet_contract.py",
+  "test_fleet_evaluator.py",
+  "test_fleet_integrity.py",
+  "test_fleet_onchain.py",
+  "test_fleet_orchestrator.py",
+  "test_fleet_portfolio.py",
+  "test_fleet_quant.py",
+  "test_market_discovery.py"
+ ]
+}
