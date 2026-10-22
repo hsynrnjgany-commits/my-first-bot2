@@ -150,12 +150,35 @@ class Orchestrator:
     # ---------- ماندگاری ----------
 
     def save(self, events: list, report: dict) -> dict:
-        """دفتر append-only + وضعیت چرخه. state_dir خاموش → فقط بازگشت آمار."""
+        """دفتر append-only + وضعیت چرخه. state_dir خاموش → فقط بازگشت آمار.
+        سلامت خوشه‌ها «تجمعی» نگه داشته می‌شود: چرخهٔ تکراری (skip) نباید
+        سابقهٔ اجراهای سالم قبلی را پاک کند — واقعیت یعنی تاریخچهٔ واقعی."""
         if not self.state_dir:
             return {"written": 0, "duplicates_skipped": 0}
         os.makedirs(self.state_dir, exist_ok=True)
         res = append_events(os.path.join(self.state_dir, "events.jsonl"), events)
         status_path = os.path.join(self.state_dir, "status.json")
+        previous = None
+        if os.path.exists(status_path):
+            try:
+                with open(status_path, "r", encoding="utf-8") as fh:
+                    previous = json.load(fh)
+            except (json.JSONDecodeError, OSError):
+                previous = None
+        # تجمیع سلامت: اجراهای قبلی محفوظ می‌مانند
+        if isinstance(previous, dict) and isinstance(previous.get("health"), dict):
+            for cid, h in previous["health"].items():
+                cur = report["health"].get(cid)
+                if cur is None:
+                    report["health"][cid] = h
+                    continue
+                cur["runs_ok"] = (h.get("runs_ok") or 0) + (cur.get("runs_ok") or 0)
+                cur["runs_failed"] = (h.get("runs_failed") or 0) + (cur.get("runs_failed") or 0)
+                if cur.get("status") in (None, "REGISTERED"):
+                    cur["status"] = h.get("status", cur.get("status"))
+                if cur.get("last_ok") is None:
+                    cur["last_ok"] = h.get("last_ok")
+            report["cumulative_health"] = True
         with open(status_path, "w", encoding="utf-8") as fh:
             json.dump(report, fh, ensure_ascii=False, indent=2)
         return res

@@ -18,6 +18,10 @@ TOOBIT_PRICE_URL = "https://api.toobit.com/quote/v1/ticker/price"
 BINANCE_PRICE_URL = "https://api.binance.com/api/v3/ticker/price"
 BINANCE_FUNDING_URL = "https://fapi.binance.com/fapi/v1/fundingRate"
 BINANCE_OI_URL = "https://fapi.binance.com/fapi/v1/openInterest"
+BYBIT_KLINES_URL = "https://api.bybit.com/v5/market/kline"
+OKX_KLINES_URL = "https://www.okx.com/api/v5/market/candles"
+BYBIT_TICKER_URL = "https://api.bybit.com/v5/market/tickers"
+OKX_TICKER_URL = "https://www.okx.com/api/v5/market/ticker"
 
 # بازهٔ «1h» با پروب واقعی روی هر دو منبع تأیید شد (۱۰۰تایی از Toobit و Binance)
 INTERVALS = ("15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d")
@@ -61,22 +65,68 @@ def parse_klines(payload) -> list:
     return candles
 
 
+def parse_bybit_klines(payload) -> list:
+    """v5/market/kline: result.list نزولی [start,o,h,l,c,v,turnover] → صعودی."""
+    rows = payload["result"]["list"]
+    candles = []
+    for row in rows:
+        candles.append({
+            "open_time": int(row[0]),
+            "open": float(row[1]), "high": float(row[2]),
+            "low": float(row[3]), "close": float(row[4]),
+            "volume": float(row[5]),
+        })
+    candles.reverse()  # از قدیمی به جدید
+    return candles
+
+
+def to_okx_inst(symbol: str) -> "str | None":
+    """BTCUSDT → BTC-USDT؛ غیر USDT پشتیبانی نمی‌شود (صادقانه None)."""
+    if symbol.endswith("USDT") and len(symbol) > 4:
+        return symbol[:-4] + "-USDT"
+    return None
+
+
+def parse_okx_klines(payload) -> list:
+    """v5/market/candles: data نزولی [ts,o,h,l,c,vol,volCcy,volCcyQuote,confirm]
+    — فقط کندل‌های confirmed (confirm=="1") نگه داشته می‌شود."""
+    rows = payload["data"]
+    candles = []
+    for row in rows:
+        if len(row) < 9 or row[8] != "1":
+            continue  # کندل ناتمام آخر — وارد تحلیل نمی‌شود
+        candles.append({
+            "open_time": int(row[0]),
+            "open": float(row[1]), "high": float(row[2]),
+            "low": float(row[3]), "close": float(row[4]),
+            "volume": float(row[5]),
+        })
+    candles.reverse()
+    return candles
+
+
 def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200,
                  opener=None) -> dict:
-    """Toobit اول، Binance پشتیبان. خروجی همیشه ok/candles/source/errors دارد."""
+    """زنجیرهٔ منابع: Toobit → Binance → Bybit → OKX. شکست هر منبع ثبت و ادامه."""
     errors = []
+    okx_inst = to_okx_inst(symbol)
     targets = (
-        ("toobit", f"{TOOBIT_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}"),
-        ("binance", f"{BINANCE_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}"),
+        ("toobit", f"{TOOBIT_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}", parse_klines),
+        ("binance", f"{BINANCE_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}", parse_klines),
+        ("bybit", f"{BYBIT_KLINES_URL}?category=spot&symbol={symbol}&interval=60&limit={limit}", parse_bybit_klines),
+        ("okx", f"{OKX_KLINES_URL}?instId={okx_inst}&bar=1H&limit={limit}" if okx_inst else None, parse_okx_klines),
     )
-    for name, url in targets:
+    for name, url, parser in targets:
+        if not url:
+            errors.append({"source": name, "error_type": "SYMBOL_UNSUPPORTED"})
+            continue
         payload, err = _get_json(url, opener)
         if err:
             errors.append({"source": name, **err})
             continue
         try:
-            candles = parse_klines(payload)
-        except (ValueError, TypeError, IndexError) as parse_err:
+            candles = parser(payload)
+        except (ValueError, TypeError, IndexError, KeyError) as parse_err:
             errors.append({"source": name, "error_type": "PARSE_ERROR",
                            "message": str(parse_err)})
             continue
@@ -114,6 +164,13 @@ def fetch_price(symbol: str, exchange: str = "toobit", opener=None) -> dict:
         url = f"{TOOBIT_PRICE_URL}?symbol={symbol}"
     elif exchange == "binance":
         url = f"{BINANCE_PRICE_URL}?symbol={symbol}"
+    elif exchange == "bybit":
+        url = f"{BYBIT_TICKER_URL}?category=spot&symbol={symbol}"
+    elif exchange == "okx":
+        inst = to_okx_inst(symbol)
+        if not inst:
+            return {"ok": False, "error": {"error_type": "SYMBOL_UNSUPPORTED"}}
+        url = f"{OKX_TICKER_URL}?instId={inst}"
     else:
         return {"ok": False, "error": {"error_type": "UNKNOWN_EXCHANGE",
                                        "message": exchange}}
@@ -127,6 +184,16 @@ def fetch_price(symbol: str, exchange: str = "toobit", opener=None) -> dict:
         if exchange == "binance" and isinstance(payload, dict):
             return {"ok": True, "price": float(payload["price"]),
                     "asof_ms": int(payload.get("time") or 0)}
+        if exchange == "bybit" and isinstance(payload, dict):
+            lst = payload["result"]["list"]
+            if lst:
+                return {"ok": True, "price": float(lst[0]["lastPrice"]),
+                        "asof_ms": int(float(lst[0].get("ts") or 0))}
+        if exchange == "okx" and isinstance(payload, dict):
+            data = payload["data"]
+            if data:
+                return {"ok": True, "price": float(data[0]["last"]),
+                        "asof_ms": int(data[0].get("ts") or 0)}
     except (KeyError, TypeError, ValueError) as conv_err:
         return {"ok": False, "error": {"error_type": "PARSE_ERROR",
                                        "message": str(conv_err)}}

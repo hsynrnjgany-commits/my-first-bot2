@@ -5,6 +5,8 @@
 # تا وقتی شواهد کافی نیست، فقط INSUFFICIENT_EVIDENCE یا UNVALIDATED صادر می‌شود
 # و «هیچ معیار یا آستانه‌ای به‌عنوان موفقیت قطعی جعل نمی‌شود».
 
+import math
+
 from .contract import make_message
 from . import risk as risk_mod
 
@@ -106,14 +108,74 @@ def evaluate(trades: list, *, min_samples: int = MIN_SAMPLES) -> dict:
             "OPEN": sum(1 for t in trades if t["exit_reason"] == "OPEN"),
         },
         "concentration": risk_mod.concentration(trades),
+        "t_stat": t_stat(nets),
+        "kelly_fraction_paper": kelly_fraction_paper(nets),
+        "walk_forward": walk_forward(trades),
         "validation_status": "INSUFFICIENT_EVIDENCE" if n < min_samples
         else "UNVALIDATED",
         "method": METHOD,
         "note": ("شبیه‌سازی کاغذی روی دادهٔ تاریخی؛ UNVALIDATED یعنی حتی "
-                 "آزمون خارج از نمونه/Walk-Forward هنوز انجام نشده — "
+                 "آزمون خارج از نمونه/Walk-Forward هنوز به قضاوت نرسیده — "
                  "هیچ ادعای سودآوری وجود ندارد"),
     }
     return result
+
+
+# ---------- بند ۵ (نسخهٔ ۲): سنجه‌های استحکام — همه «پژوهشی» و بدون آستانهٔ جعلی ----------
+
+def t_stat(nets: list) -> "float | None":
+    """t تک‌نمونه‌ای برای میانگین بازده خالص — n<2 یا واریانس صفر → None."""
+    n = len(nets)
+    if n < 2:
+        return None
+    mean = sum(nets) / n
+    var = sum((x - mean) ** 2 for x in nets) / (n - 1)
+    std = math.sqrt(var)
+    if std <= 0:
+        return None
+    return round(mean / (std / math.sqrt(n)), 4)
+
+
+def kelly_fraction_paper(nets: list) -> "float | None":
+    """کسری Kelly از توزیع نتایج کاغذی — فقط پژوهشی؛ هرگز توصیهٔ اندازه‌گیری واقعی."""
+    wins = [x for x in nets if x > 0]
+    losses = [x for x in nets if x < 0]
+    if not wins or not losses:
+        return None
+    p = len(wins) / len(nets)
+    avg_win = sum(wins) / len(wins)
+    avg_loss = abs(sum(losses) / len(losses))
+    b = avg_win / avg_loss
+    return round((p * b - (1 - p)) / b, 4)
+
+
+def walk_forward(trades: list, n_splits: int = 4, min_per_window: int = 5) -> dict:
+    """پنجره‌های زمانی پیوسته: میانگین بازده هر پنجره + سهم پنجره‌های مثبت.
+    این «آزمون» است نه حکم؛ خروجی صرفاً اعداد بی‌طرف می‌دهد."""
+    ordered = sorted(trades, key=lambda t: t.get("entry_time_ms", 0))
+    n = len(ordered)
+    if n < n_splits * min_per_window:
+        return {"status": "INSUFFICIENT_EVIDENCE", "n": n,
+                "required": n_splits * min_per_window}
+    chunk = n // n_splits
+    windows = []
+    for k in range(n_splits):
+        part = ordered[k * chunk:(k + 1) * chunk] if k < n_splits - 1 \
+            else ordered[(n_splits - 1) * chunk:]
+        nets = [t["net_pct"] for t in part]
+        windows.append({
+            "n": len(nets),
+            "avg_net_pct": round(sum(nets) / len(nets), 6),
+            "wins": sum(1 for x in nets if x > 0),
+        })
+    positive = sum(1 for w in windows if w["avg_net_pct"] > 0)
+    return {
+        "status": "COMPUTED",
+        "splits": n_splits,
+        "windows": windows,
+        "positive_windows": positive,
+        "stability_note": "سهم پنجره‌های مثبت فقط توصیف است — آستانهٔ موفقیت جعل نشده",
+    }
 
 
 def evaluation_message(symbol: str, metrics: dict, *, data_asof_ms: int,

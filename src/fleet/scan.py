@@ -17,6 +17,7 @@ from .evaluator import evaluate, evaluation_message, simulate_trades
 from .integrity import audit_candles
 from .liquidity import LiquidityCluster
 from .orchestrator import Orchestrator
+from .quant import QuantCluster
 from .sessions import SessionCluster
 from .structure import StructureCluster
 from .volume import VolumeCluster
@@ -101,7 +102,7 @@ def main(argv=None) -> int:
         tasks.append({"cluster_id": "G", "symbol": s, "candles": None,
                       "ctx": ctx})
         prices, asof = {}, {}
-        for ex in ("toobit", "binance"):
+        for ex in ("toobit", "binance", "bybit", "okx"):
             p = src.fetch_price(s, ex)
             if p["ok"]:
                 prices[ex] = p["price"]
@@ -114,12 +115,19 @@ def main(argv=None) -> int:
     if not clean_map:
         print("هیچ نمادی دادهٔ معتبر نداشت — خطای محیط/منبع، نه موفقیت.")
         return EXIT_ENV
+    # خوشهٔ M: یک وظیفه در هر چرخه با نگاشت کامل کندل‌های پاک (برای جفت‌ها)
+    max_asof = max(v[1] for v in clean_map.values())
+    tasks.append({
+        "cluster_id": "M", "symbol": "PAIRS", "candles": None,
+        "ctx": {"interval": args.interval, "data_asof_ms": max_asof,
+                "candles_map": {s: v[0] for s, v in clean_map.items()}},
+    })
 
     # ۳) اجرای چرخه از طریق Orchestrator (ایزوله، ضدتکرار، با تلاش مجدد محدود)
     orch = Orchestrator(state_dir=state_dir)
     for cluster in (StructureCluster(), VolumeCluster(), LiquidityCluster(),
                     SessionCluster(), DerivativesCluster(),
-                    CrossMarketCluster()):
+                    CrossMarketCluster(), QuantCluster()):
         orch.register(cluster)
     result = orch.run_cycle(tasks)
     events = list(result["events"]) + integrity_findings

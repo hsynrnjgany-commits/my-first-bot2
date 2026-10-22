@@ -3,9 +3,15 @@
 # فقط درخواست‌های GET عمومی و بی‌کلید؛ هیچ سفارشی، هیچ رازی. خروج ۱۰ یعنی
 # INCONCLUSIVE (شبکه/محیط) و شکست شمرده نمی‌شود؛ خروج ۲۰/۳۰ واقعاً قرمز است.
 
-name: MARI Fleet Scan (manual)
+name: MARI Fleet Scan (scheduled + manual)
+
+# شکار خودکار هر ۴ ساعت (UTC) + اجرای دستی دلخواه.
+# توجه: پهپاد AI (خوشهٔ J-lite) فقط در سندباکس اجرا می‌شود (کلید SDK آنجا
+# امن است و هرگز در CI قرار نمی‌گیرد) — این جاب فقط خوشه‌های B–H و M را می‌دود.
 
 on:
+  schedule:
+    - cron: "0 */4 * * *"
   workflow_dispatch:
     inputs:
       symbols:

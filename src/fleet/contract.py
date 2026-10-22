@@ -28,6 +28,8 @@ CLUSTERS = {
     "J": "macro-news-events",
     "K": "risk-portfolio",
     "L": "data-integrity-forensics",
+    # افزودهٔ ناوگان (ثبت شفاف، فراتر از فهرست A–L دستور): آزمایشگاه کمّی
+    "M": "quant-lab",
 }
 
 # وضعیت بررسی — هیچ وضعیت دیگری مجاز نیست؛ جعل موفقیت ساختاری رد می‌شود
