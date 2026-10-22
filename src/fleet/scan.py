@@ -16,8 +16,10 @@ from .derivatives import DerivativesCluster
 from .evaluator import evaluate, evaluation_message, simulate_trades
 from .integrity import audit_candles
 from .liquidity import LiquidityCluster
+from .onchain import OnchainCluster
 from .orchestrator import Orchestrator
 from .quant import QuantCluster
+from .risk import PortfolioRiskCluster
 from .sessions import SessionCluster
 from .structure import StructureCluster
 from .volume import VolumeCluster
@@ -117,17 +119,25 @@ def main(argv=None) -> int:
         return EXIT_ENV
     # خوشهٔ M: یک وظیفه در هر چرخه با نگاشت کامل کندل‌های پاک (برای جفت‌ها)
     max_asof = max(v[1] for v in clean_map.values())
+    candles_map = {s: v[0] for s, v in clean_map.items()}
     tasks.append({
         "cluster_id": "M", "symbol": "PAIRS", "candles": None,
         "ctx": {"interval": args.interval, "data_asof_ms": max_asof,
-                "candles_map": {s: v[0] for s, v in clean_map.items()}},
+                "candles_map": candles_map},
+    })
+    # خوشهٔ I: یک وظیفهٔ سراسری در هر چرخه (منابع آن سراسری‌اند، نه نماد-محور)
+    tasks.append({
+        "cluster_id": "I", "symbol": "GLOBAL", "candles": None,
+        "ctx": {"interval": args.interval, "data_asof_ms": max_asof},
     })
 
     # ۳) اجرای چرخه از طریق Orchestrator (ایزوله، ضدتکرار، با تلاش مجدد محدود)
     orch = Orchestrator(state_dir=state_dir)
     for cluster in (StructureCluster(), VolumeCluster(), LiquidityCluster(),
                     SessionCluster(), DerivativesCluster(),
-                    CrossMarketCluster(), QuantCluster()):
+                    CrossMarketCluster(), QuantCluster(),
+                    OnchainCluster(state_dir=state_dir),
+                    PortfolioRiskCluster()):
         orch.register(cluster)
     result = orch.run_cycle(tasks)
     events = list(result["events"]) + integrity_findings
@@ -151,6 +161,22 @@ def main(argv=None) -> int:
     eval_res = append_events(os.path.join(state_dir, "events.jsonl"),
                              eval_events)
 
+    # ۴-ب) خوشهٔ K در چرخهٔ دوم: ورودی آن خروجی ارزیاب است — پس بعد از ارزیاب
+    # از مسیر رسمی Orchestrator اجرا می‌شود (همان ضدتکرار/ایزوله‌سازی/سلامت).
+    k_tasks = [{
+        "cluster_id": "K", "symbol": "PORTFOLIO", "candles": None,
+        "ctx": {"interval": args.interval, "data_asof_ms": max_asof,
+                "paper_trades": all_trades, "candles_map": candles_map},
+    }]
+    k_result = orch.run_cycle(k_tasks)
+    k_report = k_result["report"]
+    events.extend(k_result["events"])
+    report["tasks_total"] += k_report["tasks_total"]
+    report["tasks_executed"] += k_report["tasks_executed"]
+    report["tasks_skipped_duplicate"] += k_report["tasks_skipped_duplicate"]
+    report["portfolio_risk_events"] = len(k_result["events"])
+    report["onchain_events"] = sum(1 for e in events if e.get("cluster_id") == "I")
+
     # ۵) ماندگاری چرخه + یافته‌های L (dedup توسط قرارداد)
     report["integrity_findings"] = len(integrity_findings)
     report["evaluator_global"] = global_metrics
@@ -164,7 +190,9 @@ def main(argv=None) -> int:
     print("---- چرخهٔ ناوگان ----")
     print(f"cycle_id: {report['cycle_id']} | وظایف: {report['tasks_total']} "
           f"(اجرا {report['tasks_executed']}، تکرار ردشده "
-          f"{report['tasks_skipped_duplicate']})")
+          f"{report['tasks_skipped_duplicate']}) | "
+          f"رویداد آن‌چین I: {report.get('onchain_events', 0)} | "
+          f"رویداد ریسک K: {report.get('portfolio_risk_events', 0)}")
     for cid, h in report["health"].items():
         print(f"  خوشهٔ {cid}: {h['status']} "
               f"(ok={h['runs_ok']} fail={h['runs_failed']})")

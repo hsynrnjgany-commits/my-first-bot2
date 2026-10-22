@@ -234,3 +234,120 @@ def fetch_open_interest(symbol: str, opener=None) -> dict:
     except (KeyError, TypeError, ValueError) as conv_err:
         return {"ok": False, "error": {"error_type": "PARSE_ERROR",
                                        "message": str(conv_err)}}
+
+
+# ---------- منابع خوشهٔ I (آن‌چین و توکن جدید) — همهٔ رایگان و بدون کلید ----------
+
+COINGECKO_TRENDING_URL = "https://api.coingecko.com/api/v3/search/trending"
+COINGECKO_MARKETS_URL = "https://api.coingecko.com/api/v3/coins/markets"
+COINGECKO_COIN_URL = "https://api.coingecko.com/api/v3/coins"
+MEMPOOL_FEES_URL = "https://mempool.space/api/v1/fees/recommended"
+MEMPOOL_DIFF_URL = "https://mempool.space/api/v1/difficulty-adjustment"
+
+
+def fetch_trending_tokens(opener=None) -> dict:
+    """توکن‌های پرتوجه‌شده از CoinGecko (عمومی). خروجی با asset_id متمایز از نماد.
+    نماد ≠ شناسهٔ دارایی؛ دارایی‌های هم‌نام با asset_id جدا می‌شوند."""
+    payload, err = _get_json(COINGECKO_TRENDING_URL, opener)
+    if err:
+        return {"ok": False, "error": err}
+    coins = payload.get("coins") if isinstance(payload, dict) else None
+    if not isinstance(coins, list):
+        return {"ok": False, "error": {"error_type": "EMPTY_PAYLOAD"}}
+    tokens = []
+    asof_ms = 0
+    for row in coins:
+        item = row.get("item") if isinstance(row, dict) else None
+        if not isinstance(item, dict):
+            continue
+        asset_id = item.get("id")
+        if not asset_id:
+            continue  # بدون شناسهٔ دارایی ثبت نمی‌شود — نماد به‌تنهایی کافی نیست
+        meta = item.get("data") if isinstance(item.get("data"), dict) else {}
+        tokens.append({
+            "asset_id": str(asset_id),
+            "symbol": str(item.get("symbol") or ""),
+            "name": str(item.get("name") or ""),
+            "market_cap_rank": item.get("market_cap_rank"),
+            "price_usd": meta.get("price"),
+        })
+    return {"ok": True, "tokens": tokens[:10], "source": "coingecko.trending/v3",
+            "asof_ms": asof_ms}
+
+
+def fetch_newly_added(opener=None, per_page: int = 30) -> dict:
+    """توکن‌های تازه‌افزوده‌شدهٔ CoinGecko (category=newly-added، عمومی).
+    توجه صریح: «تازه‌افزوده‌شده در منبع» ≠ «توکن نوپدید جهانی» — این تفاوت در
+    پیام خوشه با uncertainty ثبت می‌شود."""
+    url = (f"{COINGECKO_MARKETS_URL}?vs_currency=usd&category=newly-added"
+           f"&order=market_cap_desc&per_page={max(1, min(int(per_page), 50))}"
+           "&page=1&price_change_percentage=24h")
+    payload, err = _get_json(url, opener)
+    if err:
+        return {"ok": False, "error": err}
+    if not isinstance(payload, list):
+        return {"ok": False, "error": {"error_type": "EMPTY_PAYLOAD"}}
+    coins = []
+    for row in payload:
+        if not isinstance(row, dict) or not row.get("id"):
+            continue
+        coins.append({
+            "asset_id": str(row["id"]),
+            "symbol": str(row.get("symbol") or ""),
+            "name": str(row.get("name") or ""),
+            "market_cap": row.get("market_cap"),
+            "market_cap_rank": row.get("market_cap_rank"),
+            "total_volume": row.get("total_volume"),
+            "price_change_24h_pct": row.get("price_change_percentage_24h"),
+            "last_updated": row.get("last_updated"),
+        })
+    return {"ok": True, "coins": coins, "source": "coingecko.markets/v3"}
+
+
+def fetch_token_identity(asset_id: str, opener=None) -> dict:
+    """هویت کامل دارایی: شناسه، نماد، نام و نگاشت شبکه→قرارداد (پلتفرم‌ها).
+    برای تفکیک دارایی‌های هم‌نام و ثبت شبکه/قرارداد هر توکن (بند ۳-I)."""
+    url = (f"{COINGECKO_COIN_URL}/{asset_id}"
+           "?localization=false&tickers=false&market_data=false"
+           "&community_data=false&developer_data=false")
+    payload, err = _get_json(url, opener)
+    if err:
+        return {"ok": False, "error": err}
+    try:
+        platforms = payload.get("platforms")
+        if not isinstance(platforms, dict):
+            platforms = {}
+        return {
+            "ok": True,
+            "asset_id": str(payload["id"]),
+            "symbol": str(payload.get("symbol") or ""),
+            "name": str(payload.get("name") or ""),
+            "platforms": {str(k): (str(v) if v else None)
+                          for k, v in platforms.items()},
+            "source": "coingecko.coin/v3",
+        }
+    except (KeyError, TypeError, ValueError) as conv_err:
+        return {"ok": False, "error": {"error_type": "PARSE_ERROR",
+                                       "message": str(conv_err)}}
+
+
+def fetch_btc_network(opener=None) -> dict:
+    """وضعیت شبکهٔ بیت‌کوین از mempool.space (عمومی، بدون کلید):
+    کارمزدهای پیشنهادی + تنظیم دشواری. هر دو بخش غایب → ok=False (صادقانه)."""
+    fees_payload, fees_err = _get_json(MEMPOOL_FEES_URL, opener)
+    diff_payload, diff_err = _get_json(MEMPOOL_DIFF_URL, opener)
+    if fees_err and diff_err:
+        return {"ok": False, "error": fees_err or diff_err}
+    fees = None
+    if not fees_err and isinstance(fees_payload, dict):
+        fees = {k: fees_payload.get(k) for k in
+                ("fastestFee", "hourFee", "economyFee", "minimumFee")
+                if k in fees_payload}
+    diff = None
+    if not diff_err and isinstance(diff_payload, dict):
+        diff = {k: diff_payload.get(k) for k in
+                ("progressPercent", "difficultyChange", "remainingBlocks",
+                 "estimatedRetargetDate") if k in diff_payload}
+    return {"ok": True, "fees": fees, "difficulty": diff,
+            "source": "mempool.space/v1",
+            "partial": bool(fees_err or diff_err)}
