@@ -1,137 +1,137 @@
 {
-  "cycle_id": "99d99c089a9d",
-  "generated_at": "2026-10-23T04:50:38.368Z",
-  "elapsed_ms": 57296,
+  "cycle_id": "3d37a7520f7d",
+  "generated_at": "2026-10-23T06:37:16.284Z",
+  "elapsed_ms": 94690,
   "tasks_total": 52,
   "tasks_executed": 52,
   "tasks_skipped_duplicate": 0,
-  "events_collected": 167,
+  "events_collected": 165,
   "errors": [],
   "health": {
     "D": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.149Z"
+      "last_ok": "2026-10-23T06:35:42.655Z"
     },
     "E": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.149Z"
+      "last_ok": "2026-10-23T06:35:42.655Z"
     },
     "C": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.149Z"
+      "last_ok": "2026-10-23T06:35:42.656Z"
     },
     "F": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.150Z"
+      "last_ok": "2026-10-23T06:35:42.656Z"
     },
     "G": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.306Z"
+      "last_ok": "2026-10-23T06:35:42.809Z"
     },
     "H": {
       "status": "OK",
-      "runs_ok": 53,
+      "runs_ok": 61,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.306Z"
+      "last_ok": "2026-10-23T06:35:42.809Z"
     },
     "M": {
+      "status": "OK",
+      "runs_ok": 9,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-23T06:35:42.817Z"
+    },
+    "I": {
       "status": "OK",
       "runs_ok": 8,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:49:42.313Z"
-    },
-    "I": {
-      "status": "OK",
-      "runs_ok": 7,
-      "runs_failed": 0,
-      "last_error": null,
-      "retries_used": 0,
-      "last_ok": "2026-10-23T04:50:29.101Z"
+      "last_ok": "2026-10-23T06:36:44.411Z"
     },
     "K": {
       "status": "OK",
-      "runs_ok": 7,
+      "runs_ok": 8,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:50:38.378Z"
+      "last_ok": "2026-10-23T06:37:16.296Z"
     },
     "N": {
       "status": "OK",
-      "runs_ok": 2,
+      "runs_ok": 3,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T04:50:38.368Z"
+      "last_ok": "2026-10-23T06:37:16.284Z"
     }
   },
   "source_version": "stage1+fleet/1.0",
   "method": "orchestrator_cycle/v1",
   "safety": "READ_ONLY | PAPER_ONLY | NO_LIVE_ORDERS",
   "portfolio_risk_events": 1,
-  "onchain_events": 17,
+  "onchain_events": 14,
   "global_core_events": 2,
   "judgment_counts": {
-    "total": 1640,
-    "price_rising": 441,
-    "price_falling": 590,
-    "uptrend_confirmed": 2,
-    "uptrend_rejected": 6,
-    "uptrend_unverified": 1026,
-    "opportunity": 2,
-    "rejected": 606
+    "total": 1390,
+    "price_rising": 454,
+    "price_falling": 353,
+    "uptrend_confirmed": 4,
+    "uptrend_rejected": 4,
+    "uptrend_unverified": 806,
+    "opportunity": 4,
+    "rejected": 576
   },
   "integrity_findings": 0,
   "evaluator_global": {
     "n": 3,
     "min_samples_required": 30,
-    "profit_factor": 1.8261,
+    "profit_factor": 8.1134,
     "win_rate": 0.6667,
-    "avg_net_pct": 0.157195,
+    "avg_net_pct": 0.635129,
     "max_drawdown_curve": 0.0,
-    "avg_mfe_pct": 0.669611,
-    "avg_mae_pct": 0.278789,
+    "avg_mfe_pct": 1.039182,
+    "avg_mae_pct": 0.239884,
     "exit_mix": {
       "TP": 0,
       "SL": 0,
       "OPEN": 3
     },
     "concentration": {
-      "hhi": 0.3463,
+      "hhi": 0.4134,
       "top_symbol": "BNBUSDT",
-      "top_share": 0.4017,
+      "top_share": 0.4956,
       "symbols": {
-        "BTCUSDT": -0.5708,
-        "BNBUSDT": 0.648,
-        "DOGEUSDT": 0.3944
+        "XRPUSDT": -0.2679,
+        "BNBUSDT": 1.2097,
+        "DOGEUSDT": 0.9635
       }
     },
-    "t_stat": 0.4234,
-    "kelly_fraction_paper": 0.3016,
+    "t_stat": 1.3896,
+    "kelly_fraction_paper": 0.5845,
     "walk_forward": {
       "status": "INSUFFICIENT_EVIDENCE",
       "n": 3,
@@ -186,7 +186,7 @@
   "universe": {
     "count": 1068,
     "source": "toobit.ticker24/v1",
-    "asof": "2026-10-23T04:49:37.383Z"
+    "asof": "2026-10-23T06:35:37.818Z"
   },
   "cumulative_health": true
 }
