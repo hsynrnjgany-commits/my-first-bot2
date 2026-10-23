@@ -346,6 +346,77 @@ def test_load_slot_provider_missing_vault(tmp_path, monkeypatch):
     assert p.chat([{"role": "user", "content": "hi"}]).status is AIStatus.NOT_CONFIGURED
 
 
+def test_openai_compat_base_override_routes_to_relay():
+    seen = {}
+
+    def transport(url, req):
+        seen["url"] = url
+        seen["headers"] = req["headers"]
+        return 200, json.dumps({"choices": [{"message": {"content": "OK"}}]}).encode("utf-8"), {}
+
+    c = AIProviderConfig(
+        provider="gemini", api_token="AQ_test123456789", model="gemini-3.8-flash",
+        base_override="https://mari-gemini-relay.example.workers.dev/v1beta/openai",
+        extra_headers={"x-mari-relay-key": "relay_secret"},
+    )
+    r = OpenAICompatProvider(c, transport=transport).chat([{"role": "user", "content": "hi"}])
+    assert r.ok and r.text == "OK"
+    assert seen["url"].startswith(
+        "https://mari-gemini-relay.example.workers.dev/v1beta/openai/chat/completions")
+    assert seen["headers"]["x-mari-relay-key"] == "relay_secret"
+    assert seen["headers"]["Authorization"] == "Bearer AQ_test123456789"
+
+
+def test_vault_slot_loader_reads_base_and_extra_headers(tmp_path, monkeypatch):
+    import src.ai.config as cfgmod
+
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / "gemini.json").write_text(json.dumps({
+        "token": "AQ_test123456789", "model": "gemini-3.8-flash",
+        "base": "https://relay.example.workers.dev/v1beta/openai",
+        "extra_headers": {"x-mari-relay-key": "secret"},
+    }))
+    monkeypatch.setattr(cfgmod, "VAULT_DIR", str(vault))
+    monkeypatch.setattr(cfgmod, "VAULT_L4_DIR", str(tmp_path / "missing"))
+    c = load_vault_slot("gemini")
+    assert c.base_override == "https://relay.example.workers.dev/v1beta/openai"
+    assert c.extra_headers == {"x-mari-relay-key": "secret"}
+
+
+def test_openai_selftest_happy_exit_zero(tmp_path, monkeypatch):
+    import src.ai.config as cfgmod
+    import src.ai.openai_compat_provider as ocmod
+
+    vault = tmp_path / "vault"
+    vault.mkdir()
+    (vault / "gemini.json").write_text(json.dumps({"token": "AQ_test123456789"}))
+    monkeypatch.setattr(cfgmod, "VAULT_DIR", str(vault))
+    monkeypatch.setattr(cfgmod, "VAULT_L4_DIR", str(tmp_path / "missing"))
+    monkeypatch.setattr(
+        ocmod.OpenAICompatProvider, "chat",
+        lambda self, msgs, **kw: AIResponse(ok=True, status=AIStatus.VERIFIED,
+                                            provider="gemini", text="OK"))
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        code = ocmod.run_self_test("gemini")
+    assert code == 0
+    out = buf.getvalue()
+    assert '"verified"' in out and "AQ_test123456789" not in out
+
+
+def test_openai_selftest_missing_slot_exit_one(tmp_path, monkeypatch):
+    import src.ai.config as cfgmod
+    import src.ai.openai_compat_provider as ocmod
+
+    monkeypatch.setattr(cfgmod, "VAULT_DIR", str(tmp_path / "none"))
+    monkeypatch.setattr(cfgmod, "VAULT_L4_DIR", str(tmp_path / "none2"))
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        code = ocmod.run_self_test("gemini")
+    assert code == 1 and "not_configured" in buf.getvalue()
+
+
 # --------------------------------------------------------------- envelopes
 
 

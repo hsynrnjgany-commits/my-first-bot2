@@ -40,6 +40,8 @@ class AIProviderConfig:
     model: Optional[str] = None
     config_path: Optional[str] = None
     found_via: Optional[str] = None
+    base_override: Optional[str] = None
+    extra_headers: Optional[dict] = None
 
     @property
     def is_configured(self) -> bool:
@@ -120,6 +122,7 @@ def load_vault_slot(slot: str) -> AIProviderConfig:
         token = data.get("token")
         if not token:
             continue
+        extra = data.get("extra_headers")
         return AIProviderConfig(
             provider=slot,
             api_token=str(token),
@@ -127,5 +130,7 @@ def load_vault_slot(slot: str) -> AIProviderConfig:
             model=data.get("model") or None,
             config_path=path,
             found_via=base,
+            base_override=data.get("base") or None,
+            extra_headers=dict(extra) if isinstance(extra, dict) else None,
         )
     return AIProviderConfig(provider=slot)

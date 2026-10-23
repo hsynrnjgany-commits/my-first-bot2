@@ -46,13 +46,17 @@ class OpenAICompatProvider:
             return AIResponse(ok=False, status=AIStatus.NOT_CONFIGURED, code="NO_TOKEN",
                               provider=self.config.provider)
         use_model = model or self.config.model or self.endpoint["model"]
-        url = f"{self.endpoint['base']}/chat/completions"
+        base = self.config.base_override or self.endpoint["base"]
+        url = f"{base}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self.config.api_token}",
+            "Content-Type": "application/json",
+        }
+        if self.config.extra_headers:
+            headers.update({str(k): str(v) for k, v in self.config.extra_headers.items()})
         req = {
             "method": "POST",
-            "headers": {
-                "Authorization": f"Bearer {self.config.api_token}",
-                "Content-Type": "application/json",
-            },
+            "headers": headers,
             "body": json.dumps({"model": use_model, "max_tokens": max_tokens, "messages": list(messages)}),
             "timeout": self.timeout,
         }
