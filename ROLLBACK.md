@@ -12,7 +12,7 @@
 |------|-----|-------|--------------------------|
 | L1 | مخزن ناوگان `repos/my-first-bot2` (git، شاخهٔ `main`) | کد کامل ناوگان + اسنپ‌شات دفتر `data/fleet/*` + workflows + همین سند | ✅ زنده می‌ماند (بخشی از سندباکس track شده) |
 | L2 | git سندباکس `/home/z/my-project` | داشبورد Next.js + API + کتابخانهٔ تلگرام + آزمون‌ها + اشاره‌گر مخزن | ✅ زنده می‌ماند |
-| L3 | `download/mari-fleet-bundle-20261023.bundle` (+ `mari-history-bot2-2026-10-22.bundle`، `mari-clean-backup-2026-10-22.zip`) | تاریخچهٔ کامل مخزن ناوگان در یک فایل مستقل قابل دانلود | ✅ زنده می‌ماند (فایل track شده) |
+| L3 | `download/mari-fleet-bundle-20261023-v3.bundle` (+ نسخه‌های قدیمی‌تر v2 و v1 و `mari-history-bot2-2026-10-22.bundle`) | تاریخچهٔ کامل مخزن ناوگان در یک فایل مستقل قابل دانلود (v3 = آخرین، ساخته‌شده پس از ممیزی نهایی ۲۰۲۶-۱۰-۲۳) | ✅ زنده می‌ماند (فایل track شده) |
 | L4 | `/tmp/my-project/data/telegram-config.json` (chmod 600) | کپی کانفیگ ربات (توکن + chatIds) | ⚠️ نیمه‌تضمینی — اگر سندباکس و /tmp همزمان بمیرند، توکن باید یک بار دیگر از BotFather توسط کاربر فرستاده شود |
 
 ---
@@ -21,13 +21,13 @@
 
 ```bash
 # ۱. ساخت مخزن از باندل مستقل (تاریخچه کامل، بدون نیاز به GitHub)
-git clone /home/z/my-project/download/mari-fleet-bundle-20261023.bundle /tmp/restore/my-first-bot2
+git clone /home/z/my-project/download/mari-fleet-bundle-20261023-v3.bundle /tmp/restore/my-first-bot2
 cd /tmp/restore/my-first-bot2
 git checkout main
 
 # ۲. صحت‌سنجی: تعداد رویدادها + وضعیت + آزمون‌ها
 python3 -m pytest tests/ -q                 # انتظار: 164 passed (یا بیشتر)
-wc -l data/fleet/events.jsonl               # انتظار: صدها رویداد
+wc -l data/fleet/events.jsonl               # انتظار: ۶۸۰+ رویداد (دفتر فقط رشد می‌کند)
 python3 -c "import json;d=json.load(open('data/fleet/status.json'));print(d)"
 cat data/fleet/test-run.json                # انتظار: passed=true
 
@@ -41,9 +41,11 @@ cp -r /tmp/restore/my-first-bot2 /home/z/my-project/repos/
 ```bash
 cd /home/z/my-project/repos/my-first-bot2
 
-# فهرست نقاط سالم شناخته‌شده:
+# فهرست نقاط سالم شناخته‌شده (پس از ممیزی نهایی ۲۰۲۶-۱۰-۲۳):
 git log --oneline -15
-#   7925b89 ← موتور داوری ۴وضعیتی + خوشهٔ N (آخرین)
+#   41811db ← شواهد چرخهٔ N ممیزی (۱۳۹۰/۱۲۱۵/۸۱۶ در ۰۷:۳۲:۴۴ تهران) (آخرین)
+#   063d731 ← ROLLBACK.md + track اجباری آرتیفکت‌های خوشهٔ N
+#   7925b89 ← موتور داوری ۴وضعیتی + خوشهٔ N
 #   6d2699d ← ناوگان v2 (پیش از خوشه‌های I و K) — شاخهٔ پشتیبان: backup/pre-ik-20261023
 #   8d08a27 ← ناوگان v3 (I+K)
 #   6385695 ← اسنپ‌شات دفتر ۴۹۴ رویدادی
@@ -87,7 +89,7 @@ curl -s http://localhost:3000/api/telegram/status | head -c 300
 ## ۵) چک‌لیست سلامت بعد از هر بازگشت (هیچ مرحله‌ای بدون مدرک «کامل» نیست)
 
 1. `python3 -m pytest tests/ -q` در مخزن ناوگان → ۱۶۴+ passed
-2. `bun scripts/test-paper-stats.ts` (۵۵) + `test-telegram-commands.ts` (۱۹) + `test-snapshot-html.ts` (۱۸) + `test-dna-breadth.ts` + `test-daily-snapshot-wiring.ts` (۱۱) + `test-discovery-daily-wiring.ts` (۳۰) → صفر شکست
+2. `bun scripts/test-paper-stats.ts` (۵۵) + `test-telegram-commands.ts` (۱۶–۱۹ پویا) + `test-snapshot-html.ts` (۱۷–۱۸ پویا) + `test-dna-breadth.ts` (۳۸) + `test-daily-snapshot-wiring.ts` (۱۱) + `test-discovery-daily-wiring.ts` (۳۰) + `test-command-center-wiring.ts` (۵۸) → صفر شکست (شمارش‌های پویا با دادهٔ کهنه بخش مربوطه را حذف می‌کنند — رفتار صادقانه)
 3. `npx tsc --noEmit && npx eslint . && npx next build` در سندباکس → صفر خطا
 4. `curl -s http://localhost:3000/api/fleet/global | head -c 400` → قیف ۴ مرحله‌ای با اعداد واقعی
 5. `curl -s http://localhost:3000/api/telegram/status` → configured=true، lastOk=true
