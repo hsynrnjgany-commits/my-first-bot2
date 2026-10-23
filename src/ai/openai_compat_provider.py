@@ -18,7 +18,7 @@ OPENAI_COMPAT_ENDPOINTS: Dict[str, Dict[str, str]] = {
     "deepseek": {"base": "https://api.deepseek.com/v1", "model": "deepseek-chat", "label": "DeepSeek"},
     "gemini": {
         "base": "https://generativelanguage.googleapis.com/v1beta/openai",
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.8-flash",
         "label": "Gemini",
     },
 }
@@ -76,8 +76,14 @@ class OpenAICompatProvider:
                               provider=self.config.provider, model=use_model, elapsed_ms=elapsed,
                               detail="rate/quota limit — key may still be valid")
         if status != 200:
+            snippet = ""
+            try:
+                snippet = (raw or b"").decode("utf-8", "replace")[:220]
+            except Exception:  # noqa: BLE001 - diagnostics must never crash
+                snippet = ""
             return AIResponse(ok=False, status=AIStatus.NETWORK_ERROR, code=f"HTTP_{status}",
-                              provider=self.config.provider, model=use_model, elapsed_ms=elapsed)
+                              provider=self.config.provider, model=use_model, elapsed_ms=elapsed,
+                              detail=snippet or None)
         choices = body.get("choices") if isinstance(body, dict) else None
         text = None
         if isinstance(choices, list) and choices and isinstance(choices[0], dict):
