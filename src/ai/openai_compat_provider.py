@@ -6,6 +6,7 @@ READ ONLY | PAPER ONLY | NO LIVE ORDERS
 """
 
 import json
+import sys
 from typing import Callable, Dict, Optional, Tuple
 
 from src.ai.cloudflare_provider import Transport, default_transport
@@ -101,3 +102,48 @@ def load_slot_provider(slot: str, transport: Optional[Transport] = None) -> Open
 def token_masked_for(slot: str) -> str:
     cfg = load_vault_slot(slot)
     return mask_secret(cfg.api_token) or "(none)"
+
+
+def _row(step: str, resp: AIResponse) -> Dict[str, object]:
+    row: Dict[str, object] = {
+        "step": step, "ok": resp.ok, "status": resp.status.value, "code": resp.code,
+        "provider": resp.provider, "model": resp.model, "detail": resp.detail,
+        "elapsed_ms": resp.elapsed_ms,
+    }
+    if resp.text:
+        row["text"] = resp.text[:80]
+    return row
+
+
+def run_self_test(slot: str = "gemini") -> int:
+    """Vault slot -> one tiny chat against the real API. Honest at every step.
+
+    No claim of success without a real 200 from the vendor; exit code follows.
+    """
+    cfg = load_vault_slot(slot)
+    mask = cfg.token_masked or "(none)"
+    if not cfg.is_configured:
+        payload = {"provider": slot, "token_masked": mask, "reports": [
+            _row("load_slot", AIResponse(ok=False, status=AIStatus.NOT_CONFIGURED,
+                                         code="NO_TOKEN", provider=slot)),
+        ]}
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 1
+    provider = OpenAICompatProvider(cfg)
+    chat = provider.chat(
+        [{"role": "user", "content": "Reply with exactly: OK"}], max_tokens=8,
+    )
+    payload = {
+        "provider": slot, "token_masked": mask, "config_found_via": cfg.found_via,
+        "reports": [
+            _row("load_slot", AIResponse(ok=True, status=AIStatus.VERIFIED, provider=slot,
+                                         detail=f"vault slot loaded from {cfg.found_via}")),
+            _row("chat", chat),
+        ],
+    }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    return 0 if chat.ok else 1
+
+
+if __name__ == "__main__":  # pragma: no cover - live entry
+    sys.exit(run_self_test(sys.argv[1] if len(sys.argv) > 1 else "gemini"))
