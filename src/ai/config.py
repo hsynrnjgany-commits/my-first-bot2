@@ -90,7 +90,7 @@ def load_provider_config(
         return AIProviderConfig(
             provider=provider,
             api_token=str(token) if token else None,
-            account_id=data.get("account_id") or None,
+            account_id=data.get("account_id") or data.get("accountId") or None,
             model=data.get("model") or None,
             config_path=path,
             found_via=(env_path if path == env_path else path),
