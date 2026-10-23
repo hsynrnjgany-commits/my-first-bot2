@@ -1,137 +1,137 @@
 {
-  "cycle_id": "3d37a7520f7d",
-  "generated_at": "2026-10-23T06:37:16.284Z",
-  "elapsed_ms": 94690,
+  "cycle_id": "db217c28c826",
+  "generated_at": "2026-10-23T20:29:06.826Z",
+  "elapsed_ms": 128530,
   "tasks_total": 52,
   "tasks_executed": 52,
   "tasks_skipped_duplicate": 0,
-  "events_collected": 165,
+  "events_collected": 176,
   "errors": [],
   "health": {
     "D": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.655Z"
+      "last_ok": "2026-10-23T20:26:59.343Z"
     },
     "E": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.655Z"
+      "last_ok": "2026-10-23T20:26:59.343Z"
     },
     "C": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.656Z"
+      "last_ok": "2026-10-23T20:26:59.343Z"
     },
     "F": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.656Z"
+      "last_ok": "2026-10-23T20:26:59.343Z"
     },
     "G": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.809Z"
+      "last_ok": "2026-10-23T20:26:59.495Z"
     },
     "H": {
       "status": "OK",
-      "runs_ok": 61,
+      "runs_ok": 69,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.809Z"
+      "last_ok": "2026-10-23T20:26:59.495Z"
     },
     "M": {
+      "status": "OK",
+      "runs_ok": 10,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-23T20:26:59.501Z"
+    },
+    "I": {
       "status": "OK",
       "runs_ok": 9,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:35:42.817Z"
-    },
-    "I": {
-      "status": "OK",
-      "runs_ok": 8,
-      "runs_failed": 0,
-      "last_error": null,
-      "retries_used": 0,
-      "last_ok": "2026-10-23T06:36:44.411Z"
+      "last_ok": "2026-10-23T20:28:45.271Z"
     },
     "K": {
       "status": "OK",
-      "runs_ok": 8,
+      "runs_ok": 9,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:37:16.296Z"
+      "last_ok": "2026-10-23T20:29:06.838Z"
     },
     "N": {
       "status": "OK",
-      "runs_ok": 3,
+      "runs_ok": 4,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-23T06:37:16.284Z"
+      "last_ok": "2026-10-23T20:29:06.826Z"
     }
   },
   "source_version": "stage1+fleet/1.0",
   "method": "orchestrator_cycle/v1",
   "safety": "READ_ONLY | PAPER_ONLY | NO_LIVE_ORDERS",
-  "portfolio_risk_events": 1,
-  "onchain_events": 14,
+  "portfolio_risk_events": 2,
+  "onchain_events": 16,
   "global_core_events": 2,
   "judgment_counts": {
-    "total": 1390,
-    "price_rising": 454,
-    "price_falling": 353,
-    "uptrend_confirmed": 4,
-    "uptrend_rejected": 4,
-    "uptrend_unverified": 806,
-    "opportunity": 4,
-    "rejected": 576
+    "total": 1600,
+    "price_rising": 666,
+    "price_falling": 311,
+    "uptrend_confirmed": 1,
+    "uptrend_rejected": 7,
+    "uptrend_unverified": 978,
+    "opportunity": 1,
+    "rejected": 614
   },
   "integrity_findings": 0,
   "evaluator_global": {
     "n": 3,
     "min_samples_required": 30,
-    "profit_factor": 8.1134,
-    "win_rate": 0.6667,
-    "avg_net_pct": 0.635129,
-    "max_drawdown_curve": 0.0,
-    "avg_mfe_pct": 1.039182,
-    "avg_mae_pct": 0.239884,
+    "profit_factor": 5.3397,
+    "win_rate": 0.3333,
+    "avg_net_pct": 0.487634,
+    "max_drawdown_curve": 0.187277,
+    "avg_mfe_pct": 1.171078,
+    "avg_mae_pct": 0.358675,
     "exit_mix": {
-      "TP": 0,
+      "TP": 1,
       "SL": 0,
-      "OPEN": 3
+      "OPEN": 2
     },
     "concentration": {
-      "hhi": 0.4134,
-      "top_symbol": "BNBUSDT",
-      "top_share": 0.4956,
+      "hhi": 0.7219,
+      "top_symbol": "PEPEUSDT",
+      "top_share": 0.8423,
       "symbols": {
-        "XRPUSDT": -0.2679,
-        "BNBUSDT": 1.2097,
-        "DOGEUSDT": 0.9635
+        "PEPEUSDT": 1.8,
+        "BNBUSDT": -0.1582,
+        "NEARUSDT": -0.1789
       }
     },
-    "t_stat": 1.3896,
-    "kelly_fraction_paper": 0.5845,
+    "t_stat": 0.7431,
+    "kelly_fraction_paper": 0.2709,
     "walk_forward": {
       "status": "INSUFFICIENT_EVIDENCE",
       "n": 3,
@@ -157,6 +157,11 @@
       "source": "toobit",
       "candles": 200
     },
+    "PEPEUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 200
+    },
     "ZECUSDT": {
       "ok": true,
       "source": "toobit",
@@ -176,17 +181,12 @@
       "ok": true,
       "source": "toobit",
       "candles": 200
-    },
-    "DOGEUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 200
     }
   },
   "universe": {
     "count": 1068,
     "source": "toobit.ticker24/v1",
-    "asof": "2026-10-23T06:35:37.818Z"
+    "asof": "2026-10-23T20:26:54.232Z"
   },
   "cumulative_health": true
 }
