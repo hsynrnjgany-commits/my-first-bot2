@@ -51,6 +51,9 @@ class OpenAICompatProvider:
         headers = {
             "Authorization": f"Bearer {self.config.api_token}",
             "Content-Type": "application/json",
+            # CF workers.dev bot rules flag python-urllib (error 1010); declare honestly
+            "User-Agent": "mari-paper-research/1.0",
+            "Accept": "application/json",
         }
         if self.config.extra_headers:
             headers.update({str(k): str(v) for k, v in self.config.extra_headers.items()})
@@ -72,9 +75,14 @@ class OpenAICompatProvider:
         except ValueError:
             body = {}
         if status in (401, 403):
+            snippet = ""
+            try:
+                snippet = (raw or b"").decode("utf-8", "replace")[:220]
+            except Exception:  # noqa: BLE001 - diagnostics must never crash
+                snippet = ""
             return AIResponse(ok=False, status=AIStatus.AUTH_FAILED, code=f"HTTP_{status}",
                               provider=self.config.provider, model=use_model, elapsed_ms=elapsed,
-                              detail=f"{self.endpoint['label']} rejected the key")
+                              detail=snippet or f"{self.endpoint['label']} rejected the key")
         if status == 429:
             return AIResponse(ok=False, status=AIStatus.RATE_LIMITED, code="HTTP_429",
                               provider=self.config.provider, model=use_model, elapsed_ms=elapsed,
