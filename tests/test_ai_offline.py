@@ -4,6 +4,7 @@ HTTP is mocked via the transport seam; no real network, no secrets.
 READ ONLY | PAPER ONLY | NO LIVE ORDERS
 """
 
+import base64
 import io
 import json
 import sys
@@ -20,6 +21,7 @@ from src.ai.config import (
 )
 from src.ai.provider import AIResponse, AIStatus
 from src.ai.cloudflare_provider import CloudflareProvider, run_self_test
+from src.ai.github_relay_provider import GitHubRelayProvider
 from src.ai.openai_compat_provider import OpenAICompatProvider, load_slot_provider
 
 # ------------------------------------------------------------------ helpers
@@ -433,3 +435,155 @@ def test_roles_are_five():
 
 def test_statuses_are_six():
     assert len(list(AIStatus)) == 6
+
+
+# ------------------------------------------------------ github actions relay
+
+
+def _seq_transport(routes):
+    """Sequential transport: advance per matching call, stick to last entry."""
+    state = {"i": 0}
+
+    def transport(url, req):
+        idx = state["i"]
+        for j in range(idx, len(routes)):
+            match, resp = routes[j]
+            if match in url:
+                state["i"] = j + 1
+                return resp[0], json.dumps(resp[1]).encode("utf-8"), {}
+        # exhausted -> repeat last matching entry forever
+        for match, resp in reversed(routes):
+            if match in url:
+                return resp[0], json.dumps(resp[1]).encode("utf-8"), {}
+        raise AssertionError(f"unexpected URL: {url}")
+
+    return transport
+
+
+def _outbox_entry(http, ok, vendor_body):
+    """Contents-API response shape wrapping an outbox file (base64)."""
+    outbox = {"ok": ok, "mode": "chat", "http": http, "body": vendor_body,
+              "elapsed_ms": 42, "ts": "2026-10-23T00:00:00Z"}
+    b64 = base64.b64encode(json.dumps(outbox).encode("utf-8")).decode("ascii")
+    return (200, {"content": b64, "encoding": "base64"})
+
+
+def test_github_relay_dispatch_shape():
+    seen = {}
+
+    def transport(url, req):
+        seen["url"], seen["req"] = url, req
+        return 204, b"", {}
+
+    p = GitHubRelayProvider(cfg(token="ghp_test1234567890", provider="github"), transport=transport)
+    ok, code = p._dispatch("rid123", '{"model":"gpt-4o-mini"}', "chat")
+    assert ok and code == "DISPATCH_OK"
+    assert "/actions/workflows/mari-openai-relay.yml/dispatches" in seen["url"]
+    assert seen["req"]["method"] == "POST"
+    body = json.loads(seen["req"]["body"].decode("utf-8"))
+    assert body["ref"] == "main"
+    assert body["inputs"]["request_id"] == "rid123"
+    assert body["inputs"]["mode"] == "chat"
+    assert json.loads(body["inputs"]["payload"])["model"] == "gpt-4o-mini"
+
+
+def test_github_relay_happy_chat():
+    vendor = json.dumps({"choices": [{"message": {"content": "OK"}}]})
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=_seq_transport([
+            ("/dispatches", (204, {})),
+            ("/contents/relay-outbox/", _outbox_entry(200, True, vendor)),
+        ]),
+        poll_interval=0.01,
+    )
+    r = p.chat([{"role": "user", "content": "hi"}])
+    assert r.ok and r.text == "OK" and r.provider == "openai-relay"
+    assert r.status is AIStatus.VERIFIED and r.elapsed_ms is not None
+
+
+def test_github_relay_polls_until_outbox_lands():
+    vendor = json.dumps({"choices": [{"message": {"content": "later"}}]})
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=_seq_transport([
+            ("/dispatches", (204, {})),
+            ("/contents/relay-outbox/", (404, {"message": "No commit found"})),
+            ("/contents/relay-outbox/", _outbox_entry(200, True, vendor)),
+        ]),
+        poll_interval=0.01,
+    )
+    r = p.chat([{"role": "user", "content": "hi"}])
+    assert r.ok and r.text == "later"
+
+
+def test_github_relay_outbox_timeout_is_honest():
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=_seq_transport([
+            ("/dispatches", (204, {})),
+            ("/contents/relay-outbox/", (404, {"message": "No commit found"})),
+        ]),
+        poll_interval=0.01, poll_timeout=0.05,
+    )
+    r = p.chat([{"role": "user", "content": "hi"}])
+    assert not r.ok and r.code == "OUTBOX_TIMEOUT"
+
+
+def test_github_relay_dispatch_403_is_network_error():
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=make_transport([("/dispatches", (403, {"message": "forbidden"}))]),
+    )
+    r = p.chat([{"role": "user", "content": "hi"}])
+    assert r.status is AIStatus.NETWORK_ERROR and "DISPATCH_HTTP_403" in (r.code or "")
+
+
+def test_github_relay_auth_failed_mapping():
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=_seq_transport([
+            ("/dispatches", (204, {})),
+            ("/contents/relay-outbox/", _outbox_entry(401, False, '{"error":"bad key"}')),
+        ]),
+        poll_interval=0.01,
+    )
+    assert p.chat([{"role": "user", "content": "hi"}]).status is AIStatus.AUTH_FAILED
+
+
+def test_github_relay_429_mapping():
+    p = GitHubRelayProvider(
+        cfg(token="ghp_test1234567890", provider="github"),
+        transport=_seq_transport([
+            ("/dispatches", (204, {})),
+            ("/contents/relay-outbox/", _outbox_entry(429, False, '{"error":"rate"}')),
+        ]),
+        poll_interval=0.01,
+    )
+    assert p.chat([{"role": "user", "content": "hi"}]).status is AIStatus.RATE_LIMITED
+
+
+def test_github_relay_not_configured():
+    p = GitHubRelayProvider(AIProviderConfig(provider="github"))
+    assert p.chat([{"role": "user", "content": "hi"}]).status is AIStatus.NOT_CONFIGURED
+
+
+def test_github_relay_selftest_masks_pat(monkeypatch):
+    import src.ai.github_relay_provider as gmod
+
+    monkeypatch.setattr(gmod, "load_vault_slot",
+                        lambda slot: cfg(token="ghp_secret_pat_9876543210", provider="github"))
+    monkeypatch.setattr(gmod.GitHubRelayProvider, "relay_call", lambda self, mode, payload: {
+        "ok": True, "http": 200, "request_id": "x", "mode": mode, "elapsed_ms": 5,
+        "body": json.dumps({"data": [{"id": "gpt-4o-mini"}]})})
+    monkeypatch.setattr(gmod.GitHubRelayProvider, "chat", lambda self, messages, max_tokens=256, model=None: AIResponse(
+        ok=True, status=AIStatus.VERIFIED, provider="openai-relay", model="gpt-4o-mini",
+        text="OK", elapsed_ms=5))
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        code = gmod.run_self_test()
+    out = buf.getvalue()
+    assert code == 0
+    assert "ghp_secret_pat_9876543210" not in out
+    assert "ghp_..." in out or "..." in out
+    assert "gpt-4o-mini" in out

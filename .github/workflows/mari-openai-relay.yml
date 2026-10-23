@@ -1,0 +1,64 @@
+# MARI — OpenAI Relay (manual dispatch only)
+# سرور با PAT این ورک‌فلو را dispatch می‌کند؛ رانر Actions (خروجی Azure آمریکا)
+# به api.openai.com زنگ می‌زند و پاسخ را در relay-outbox/<request_id>.json
+# کامیت می‌کند. کلید فقط در repo secret (MARI_OPENAI_KEY) است — هرگز در کد/لاگ.
+# ورودی‌ها از طریق env به اسکریپت می‌روند (نه interpolation در شل — ضد injection).
+# READ ONLY | PAPER ONLY | NO LIVE ORDERS
+
+name: MARI OpenAI Relay
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "Unique id; response lands in relay-outbox/<id>.json"
+        required: true
+        type: string
+      payload:
+        description: "JSON body for /v1/chat/completions (mode=chat)"
+        required: false
+        default: "{}"
+        type: string
+      mode:
+        description: "chat | models"
+        required: false
+        default: "chat"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mari-openai-relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Call OpenAI (egress = Azure US)
+        env:
+          OPENAI_KEY: ${{ secrets.MARI_OPENAI_KEY }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          PAYLOAD: ${{ inputs.payload }}
+          MODE: ${{ inputs.mode }}
+        run: python3 .github/relay/openai_call.py
+
+      - name: Commit outbox
+        run: |
+          git config user.name "mari-relay"
+          git config user.email "mari-relay@users.noreply.github.com"
+          git add relay-outbox/
+          if git diff --cached --quiet; then
+            echo "no outbox changes"; exit 0
+          fi
+          git commit -m "relay: ${{ inputs.request_id }}"
+          for i in 1 2 3; do
+            if git push; then exit 0; fi
+            git pull --rebase origin main || true
+            sleep 2
+          done
+          exit 1
