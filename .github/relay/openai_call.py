@@ -26,22 +26,12 @@ def _write_outbox(request_id: str, out: dict) -> None:
 
 def main() -> None:
     key = os.environ.get("OPENAI_KEY", "")
-    gh_token = os.environ.get("GH_MODELS_TOKEN", "")
     request_id = os.environ.get("REQUEST_ID", "unknown")
     mode = os.environ.get("MODE", "chat")
     payload_raw = os.environ.get("PAYLOAD", "{}")
     out: dict = {"ok": False, "mode": mode, "http": None, "body": None, "elapsed_ms": None}
-    if not request_id or request_id == "unknown":
-        out["body"] = "missing REQUEST_ID env"
-        _write_outbox(request_id, out)
-        return
-    if mode == "gh-models":
-        if not gh_token:
-            out["body"] = "missing GH_MODELS_TOKEN env (workflow must expose github.token)"
-            _write_outbox(request_id, out)
-            return
-    elif not key:
-        out["body"] = "missing OPENAI_KEY env"
+    if not key or not request_id or request_id == "unknown":
+        out["body"] = "missing OPENAI_KEY or REQUEST_ID env"
         _write_outbox(request_id, out)
         return
     t0 = time.time()
@@ -50,21 +40,6 @@ def main() -> None:
             req = urllib.request.Request(
                 "https://api.openai.com/v1/models", method="GET",
                 headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
-            )
-        elif mode == "gh-models":
-            # GitHub Models — same PAT-free path: built-in GITHUB_TOKEN with
-            # models: read; no repo secret involved. Serves OpenAI-class
-            # models on the free tier from the runner's Azure egress.
-            body = json.loads(payload_raw) if payload_raw else {}
-            req = urllib.request.Request(
-                "https://models.github.ai/inference/chat/completions", method="POST",
-                data=json.dumps(body).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {gh_token}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "User-Agent": "mari-paper-research/1.0",
-                },
             )
         else:
             body = json.loads(payload_raw) if payload_raw else {}
@@ -91,11 +66,8 @@ def main() -> None:
         out["body"] = f"runner_error={type(exc).__name__}: {str(exc)[:300]}"
     out["elapsed_ms"] = int((time.time() - t0) * 1000)
     # defensive: never persist the key even if a vendor echo ever happens
-    if isinstance(out.get("body"), str):
-        if key:
-            out["body"] = out["body"].replace(key, "sk-***")
-        if gh_token:
-            out["body"] = out["body"].replace(gh_token, "gh_token_***")
+    if key and isinstance(out.get("body"), str):
+        out["body"] = out["body"].replace(key, "sk-***")
     _write_outbox(request_id, out)
 
 

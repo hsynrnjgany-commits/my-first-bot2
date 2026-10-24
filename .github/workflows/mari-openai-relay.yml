@@ -27,7 +27,6 @@ on:
 
 permissions:
   contents: write
-  models: read
 
 concurrency:
   group: mari-openai-relay
@@ -43,7 +42,6 @@ jobs:
       - name: Call OpenAI (egress = Azure US)
         env:
           OPENAI_KEY: ${{ secrets.MARI_OPENAI_KEY }}
-          GH_MODELS_TOKEN: ${{ github.token }}
           REQUEST_ID: ${{ inputs.request_id }}
           PAYLOAD: ${{ inputs.payload }}
           MODE: ${{ inputs.mode }}
