@@ -1,150 +1,150 @@
 {
-  "cycle_id": "db8bc148465a",
-  "generated_at": "2026-10-24T07:18:38.573Z",
-  "elapsed_ms": 19671,
+  "cycle_id": "d113e7464513",
+  "generated_at": "2026-10-24T15:01:58.119Z",
+  "elapsed_ms": 142727,
   "tasks_total": 466,
-  "tasks_executed": 318,
-  "tasks_skipped_duplicate": 148,
-  "events_collected": 840,
+  "tasks_executed": 436,
+  "tasks_skipped_duplicate": 30,
+  "events_collected": 1255,
   "errors": [],
   "health": {
     "D": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.210Z"
+      "last_ok": "2026-10-24T14:59:47.127Z"
     },
     "E": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.210Z"
+      "last_ok": "2026-10-24T14:59:47.127Z"
     },
     "C": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.211Z"
+      "last_ok": "2026-10-24T14:59:47.128Z"
     },
     "F": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.211Z"
+      "last_ok": "2026-10-24T14:59:47.128Z"
     },
     "G": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.573Z"
+      "last_ok": "2026-10-24T14:59:47.289Z"
     },
     "H": {
       "status": "OK",
-      "runs_ok": 146,
+      "runs_ok": 218,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:18:38.573Z"
+      "last_ok": "2026-10-24T14:59:47.289Z"
     },
     "M": {
+      "status": "OK",
+      "runs_ok": 12,
+      "runs_failed": 0,
+      "last_error": null,
+      "retries_used": 0,
+      "last_ok": "2026-10-24T14:59:47.335Z"
+    },
+    "I": {
       "status": "OK",
       "runs_ok": 11,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:07:13.377Z"
-    },
-    "I": {
-      "status": "OK",
-      "runs_ok": 10,
-      "runs_failed": 0,
-      "last_error": null,
-      "retries_used": 0,
-      "last_ok": "2026-10-24T07:09:44.530Z"
+      "last_ok": "2026-10-24T15:01:48.157Z"
     },
     "K": {
       "status": "OK",
-      "runs_ok": 10,
+      "runs_ok": 11,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:10:07.997Z"
+      "last_ok": "2026-10-24T15:01:58.152Z"
     },
     "N": {
       "status": "OK",
-      "runs_ok": 5,
+      "runs_ok": 6,
       "runs_failed": 0,
       "last_error": null,
       "retries_used": 0,
-      "last_ok": "2026-10-24T07:10:07.982Z"
+      "last_ok": "2026-10-24T15:01:58.119Z"
     }
   },
   "source_version": "stage1+fleet/1.0",
   "method": "orchestrator_cycle/v1",
   "safety": "READ_ONLY | PAPER_ONLY | NO_LIVE_ORDERS",
-  "portfolio_risk_events": 0,
-  "onchain_events": 0,
-  "global_core_events": 0,
+  "portfolio_risk_events": 1,
+  "onchain_events": 14,
+  "global_core_events": 2,
   "judgment_counts": {
     "total": 1620,
-    "price_rising": 444,
-    "price_falling": 579,
+    "price_rising": 333,
+    "price_falling": 674,
     "uptrend_confirmed": 2,
     "uptrend_rejected": 68,
-    "uptrend_unverified": 960,
+    "uptrend_unverified": 944,
     "opportunity": 2,
-    "rejected": 590
+    "rejected": 606
   },
-  "integrity_findings": 71,
+  "integrity_findings": 72,
   "open_candle_guard": {
     "enabled": true,
     "server_time_source": "toobit/api-v1-time",
-    "server_now_ms": 1792826255749,
-    "unconfirmed_candles_dropped": 71,
+    "server_now_ms": 1792853936775,
+    "unconfirmed_candles_dropped": 72,
     "rule": "open_time + interval > server_now → کندل حذف (بند ۵-۴)"
   },
   "evaluator_global": {
     "n": 9,
     "min_samples_required": 30,
-    "profit_factor": 0.2466,
-    "win_rate": 0.1111,
-    "avg_net_pct": -0.610949,
-    "max_drawdown_curve": 0.0,
-    "avg_mfe_pct": 2.792174,
-    "avg_mae_pct": 1.532451,
+    "profit_factor": 1.0635,
+    "win_rate": 0.4444,
+    "avg_net_pct": 0.021696,
+    "max_drawdown_curve": 2.03839,
+    "avg_mfe_pct": 1.436853,
+    "avg_mae_pct": 0.668036,
     "exit_mix": {
       "TP": 1,
-      "SL": 5,
-      "OPEN": 3
+      "SL": 2,
+      "OPEN": 6
     },
     "concentration": {
-      "hhi": 0.1371,
-      "top_symbol": "ATFUSDT",
-      "top_share": 0.1978,
+      "hhi": 0.1928,
+      "top_symbol": "STABLEUSDT",
+      "top_share": 0.2838,
       "symbols": {
-        "BAKEUSDT": -1.2,
-        "MNTUSDT": -0.0267,
-        "SHIBUSDT": -1.2,
-        "ATOMUSDT": -0.863,
-        "ATFUSDT": 1.8,
-        "STRKUSDT": -1.2,
+        "TRXUSDT": -0.321,
+        "USDCUSDT": -0.203,
+        "MNTUSDT": 1.1862,
+        "DASHUSDT": -1.2,
+        "PENDLEUSDT": -0.1499,
+        "STABLEUSDT": 1.8,
         "OPUSDT": -1.2,
-        "ITEUSDT": -0.4088,
-        "CHESSUSDT": -1.2
+        "JUPUSDT": 0.2457,
+        "ZROUSDT": 0.0372
       }
     },
-    "t_stat": -1.8336,
-    "kelly_fraction_paper": -0.3394,
+    "t_stat": 0.0661,
+    "kelly_fraction_paper": 0.0265,
     "walk_forward": {
       "status": "INSUFFICIENT_EVIDENCE",
       "n": 9,
@@ -170,12 +170,12 @@
       "source": "toobit",
       "candles": 199
     },
-    "PEPEUSDT": {
+    "ZECUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "ZECUSDT": {
+    "XRPUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -185,7 +185,7 @@
       "source": "toobit",
       "candles": 199
     },
-    "XRPUSDT": {
+    "PEPEUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -205,12 +205,12 @@
       "source": "toobit",
       "candles": 199
     },
-    "TRXUSDT": {
+    "ENAUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "ENAUSDT": {
+    "LINKUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -218,6 +218,11 @@
     "NEOUSDT": {
       "ok": true,
       "source": "binance",
+      "candles": 199
+    },
+    "TRXUSDT": {
+      "ok": true,
+      "source": "toobit",
       "candles": 199
     },
     "SUIUSDT": {
@@ -230,22 +235,17 @@
       "source": "toobit",
       "candles": 199
     },
-    "PAXGUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
     "UNIUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "USDCUSDT": {
+    "ADAUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "LINKUSDT": {
+    "AAVEUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -279,27 +279,22 @@
       "source": "toobit",
       "candles": 199
     },
-    "ADAUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
     "GRAMUSDT": {
       "ok": true,
       "source": "binance",
       "candles": 199
     },
+    "USDCUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "PAXGUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
     "XLMUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "AAVEUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "XAUTUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -331,12 +326,7 @@
         }
       ]
     },
-    "HBARUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "DOTUSDT": {
+    "BIRBUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -346,27 +336,7 @@
       "source": "binance",
       "candles": 200
     },
-    "BIRBUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "BCHUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "MNTUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "FETUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "ARBUSDT": {
+    "HBARUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -376,7 +346,17 @@
       "source": "toobit",
       "candles": 199
     },
-    "SHIBUSDT": {
+    "MNTUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "XAUTUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "FETUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -386,7 +366,22 @@
       "source": "toobit",
       "candles": 199
     },
+    "DOTUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
     "FILUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "ARBUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "BCHUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -396,7 +391,7 @@
       "source": "toobit",
       "candles": 199
     },
-    "IRYSUSDT": {
+    "TREEUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -406,22 +401,12 @@
       "source": "toobit",
       "candles": 199
     },
-    "WLFIUSDT": {
+    "IRYSUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "APTUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "DASHUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "FDUSDUSDT": {
+    "SHIBUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -431,7 +416,7 @@
       "source": "toobit",
       "candles": 199
     },
-    "RENDERUSDT": {
+    "APTUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -441,17 +426,37 @@
       "source": "toobit",
       "candles": 199
     },
-    "ATOMUSDT": {
+    "WLFIUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "SOLIBUSDT": {
+    "AVAUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "FDUSDUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
     "ATFUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "RENDERUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "DASHUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "SOLIBUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -478,27 +483,7 @@
         }
       ]
     },
-    "AVAUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "INJUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
     "AKEUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "STRKUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "USD1USDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -507,6 +492,26 @@
       "ok": true,
       "source": "binance",
       "candles": 200
+    },
+    "LAUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "RAINUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "PENDLEUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "ATOMUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
     },
     "STABLEUSDT": {
       "ok": true,
@@ -518,37 +523,12 @@
       "source": "toobit",
       "candles": 199
     },
-    "RAINUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "TRUMPUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
     "OPUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "PENGUUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "ZROUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "HIFIUSDT": {
-      "ok": true,
-      "source": "binance",
-      "candles": 200
-    },
-    "ITEUSDT": {
+    "INJUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -558,7 +538,32 @@
       "source": "toobit",
       "candles": 199
     },
-    "PENDLEUSDT": {
+    "TRUMPUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "HIFIUSDT": {
+      "ok": true,
+      "source": "binance",
+      "candles": 200
+    },
+    "LDOUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "ITEUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "POLUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "STRKUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -573,32 +578,27 @@
       "source": "binance",
       "candles": 200
     },
-    "POLUSDT": {
+    "TBCUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "PHAUSDT": {
+    "USD1USDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
-    "LDOUSDT": {
-      "ok": true,
-      "source": "toobit",
-      "candles": 199
-    },
-    "LITUSDT": {
-      "ok": true,
-      "source": "binance",
-      "candles": 200
-    },
-    "AEROUSDT": {
+    "ZROUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
     },
     "SUSDT": {
+      "ok": true,
+      "source": "toobit",
+      "candles": 199
+    },
+    "PENGUUSDT": {
       "ok": true,
       "source": "toobit",
       "candles": 199
@@ -612,7 +612,7 @@
   "universe": {
     "count": 1068,
     "source": "toobit.ticker24/v1",
-    "asof": "2026-10-24T07:17:34.993Z"
+    "asof": "2026-10-24T14:58:56.515Z"
   },
   "cumulative_health": true
 }
