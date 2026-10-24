@@ -96,6 +96,8 @@ def return_zscore(returns: list, window: int = Z_WINDOW,
     if len(returns) < window + 1:
         return None
     hist = returns[-(window + 1):-1]
+    if max(hist) == min(hist):
+        return None  # تاریخچهٔ ثابت = واریانس صفرِ دقیق (مقاوم به گرد ممیز بین نسخه‌های پایتون)
     mean = sum(hist) / window
     std = math.sqrt(sum((r - mean) ** 2 for r in hist) / window)
     if std <= 0:

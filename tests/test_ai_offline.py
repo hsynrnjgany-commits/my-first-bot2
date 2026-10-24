@@ -339,6 +339,33 @@ def test_openai_compat_rejects_unknown_slot():
         OpenAICompatProvider(AIProviderConfig(provider="cloudflare"))
 
 
+def test_github_models_slot_routes_to_models_api():
+    """Task 78: github-models slot -> models.github.ai with PAT bearer + model passthrough."""
+    seen = {}
+
+    def transport(url, req):
+        seen["url"] = url
+        seen["headers"] = req["headers"]
+        seen["body"] = json.loads(req["body"])
+        return 200, json.dumps({"choices": [{"message": {"content": "OK"}}]}).encode("utf-8"), {}
+
+    c = AIProviderConfig(provider="github-models", api_token="ghp_test123456789",
+                         model="openai/gpt-4o-mini")
+    r = OpenAICompatProvider(c, transport=transport).chat([{"role": "user", "content": "hi"}])
+    assert r.ok and r.text == "OK" and r.provider == "github-models"
+    assert seen["url"] == "https://models.github.ai/inference/chat/completions"
+    assert seen["headers"]["Authorization"] == "Bearer ghp_test123456789"
+    assert seen["body"]["model"] == "openai/gpt-4o-mini"
+
+
+def test_github_models_endpoint_registered():
+    from src.ai.openai_compat_provider import OPENAI_COMPAT_ENDPOINTS
+    ep = OPENAI_COMPAT_ENDPOINTS["github-models"]
+    assert ep["base"] == "https://models.github.ai/inference"
+    assert ep["model"] == "openai/gpt-4o-mini"
+    assert ep["label"] == "GitHub Models"
+
+
 def test_load_slot_provider_missing_vault(tmp_path, monkeypatch):
     import src.ai.config as cfgmod
 

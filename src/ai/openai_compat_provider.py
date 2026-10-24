@@ -1,7 +1,8 @@
-"""MARI — OpenAI-compatible provider adapter (OpenAI / DeepSeek / Gemini endpoints).
+"""MARI — OpenAI-compatible provider adapter (OpenAI / DeepSeek / Gemini / GitHub Models).
 
-Rebuild of Task 67 phase 6. Reads dashboard-vault slots; identical honest-status
-semantics as the Cloudflare provider. Analysis-only output — never a signal.
+Rebuild of Task 67 phase 6; GitHub Models added Task 78. Reads dashboard-vault
+slots; identical honest-status semantics as the Cloudflare provider.
+Analysis-only output — never a signal.
 READ ONLY | PAPER ONLY | NO LIVE ORDERS
 """
 
@@ -20,6 +21,14 @@ OPENAI_COMPAT_ENDPOINTS: Dict[str, Dict[str, str]] = {
         "base": "https://generativelanguage.googleapis.com/v1beta/openai",
         "model": "gemini-3.8-flash",
         "label": "Gemini",
+    },
+    # Task 78: GitHub Models — OpenAI-compatible inference gateway served by
+    # GitHub itself, authorized with the same PAT as repo/Actions access.
+    # NOT geo-blocked from the sandbox egress (verified live 200 "OK").
+    "github-models": {
+        "base": "https://models.github.ai/inference",
+        "model": "openai/gpt-4o-mini",
+        "label": "GitHub Models",
     },
 }
 
