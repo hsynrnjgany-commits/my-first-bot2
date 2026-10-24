@@ -52,3 +52,4 @@ jobs:
           name: mari-fleet-scan
           path: data/fleet/
           retention-days: 14
+          
