@@ -50,6 +50,9 @@ def load_cycle(state_dir: str) -> dict:
     status = _read_json(os.path.join(state_dir, "status.json"))
     judg = _read_json(os.path.join(state_dir, "judgments-latest.json"))
     learn = _read_json(os.path.join(state_dir, "learning-latest.json"))
+    # اسنپ‌شات دفتر جهانی — برای پیوند شواهد حجم/نقدشوندگی واقعی به نامزدها
+    snap = _read_json(os.path.join(state_dir, "global-assets-snapshot.json"))
+    snap_rows = snap.get("rows") if isinstance(snap.get("rows"), list) else []
     events = []
     ev_path = os.path.join(state_dir, "events.jsonl")
     if os.path.exists(ev_path):
@@ -65,16 +68,26 @@ def load_cycle(state_dir: str) -> dict:
         except OSError:
             events = []
     return {"status": status, "judgment": judg,
-            "learning": learn, "events": events}
+            "learning": learn, "events": events,
+            "snapshot_rows": snap_rows}
 
 
 # ---------- ساخت نامزدها فقط از رویدادها/داوری‌های واقعی ----------
 
-def _bos_candidates(events: list) -> list:
-    """آخرین رویدادهای BOS واقعی — هر کدام event_id و evidence دارند."""
+def _bos_candidates(events: list, volume_map: dict = None) -> list:
+    """آخرین رویدادهای BOS واقعی — هر کدام event_id و evidence دارند.
+    شواهد حجم از اسنپ‌شات واقعی همان چرخه پیوند می‌شود (بند ۷:
+    liquidity_status بدون شواهد واقعی ممنوع). فیلتر تازگی: فقط BOS با
+    data_asof در ۲۴ ساعت گذشته — BOS کهنه فرصتِ فعلی نیست."""
     out = []
+    asof_max = max(
+        ((e.get("data_asof_ms") or 0) for e in events or []),
+        default=0)
+    fresh_floor = asof_max - 24 * 3600 * 1000
     for e in events or []:
         if e.get("event_type") in BOS_TYPES:
+            if (e.get("data_asof_ms") or 0) < fresh_floor:
+                continue  # BOS کهنه — در رتبه‌بندی فرصت فعلی وارد نمی‌شود
             f = e.get("features") or {}
             out.append({
                 "source": "bos_event", "ref": e.get("event_id"),
@@ -86,6 +99,7 @@ def _bos_candidates(events: list) -> list:
                 "event_time_ms": e.get("event_time_ms"),
                 "data_asof_ms": e.get("data_asof_ms"),
                 "pattern": "break_of_structure",
+                "volume_24h_usd": (volume_map or {}).get(e.get("symbol")),
                 "setup": ("closed-candle BOS با نقطهٔ ورود اپن کندل بعد؛ "
                           "شرط باطل‌شدن: بازگشت زیر/بالای سطح شکست"),
             })
@@ -165,10 +179,18 @@ def score_candidate(c: dict, *, rising_windows=None, integrity_clean=True,
 def rank_opportunities(cycle: dict, *, integrity_map=None,
                        rising_map=None) -> dict:
     """امتیاز + رتبه‌بندی همهٔ نامزدهای واقعی — بدون هیچ ساختگی.
-    خروجی تا ۱۰ ردیف برتر؛ کمتر بود، همان واقعیت گزارش می‌شود."""
+    خروجی تا ۱۰ ردیف برتر؛ کمتر بود، همان واقعیت گزارش می‌شود.
+    شواهد حجم از اسنپ‌شات دفتر جهانی (identity/asset_id→volume_24h_usd)."""
     integrity_map = integrity_map or {}
     rising_map = rising_map or {}
-    cands = _bos_candidates(cycle["events"]) + \
+    volume_map = {}
+    for row in cycle.get("snapshot_rows") or []:
+        if isinstance(row, dict) and row.get("volume_24h_usd") is not None:
+            for key in (row.get("asset_id"),
+                        (row.get("identity") or "").rsplit(":", 1)[-1]):
+                if key:
+                    volume_map[key] = row["volume_24h_usd"]
+    cands = _bos_candidates(cycle["events"], volume_map) + \
         _judgment_candidates(cycle["judgment"])
     # ادغام هم‌نماد هم‌جهت (بند ۸: سیگنال هم‌بسته = فرصت مستقل ممنوع)
     merged = {}

@@ -88,3 +88,39 @@ class TestIntegrityAudit(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestOpenCandleGuard(unittest.TestCase):
+    """بند ۵-۴ دستور MISSION 001: کندل بسته‌نشده هرگز وارد سیگنال نمی‌شود."""
+
+    def test_forming_last_candle_dropped(self):
+        cs = clean_series(5)
+        now = cs[-1]["open_time"] + HOUR - 1  # کندل آخر هنوز باز است
+        clean, findings = integrity.audit_candles(
+            cs, interval_ms=HOUR, symbol="BTCUSDT", exchange="toobit",
+            timeframe="1h", data_asof_ms=cs[-1]["open_time"],
+            server_now_ms=now)
+        self.assertEqual(len(clean), 4)
+        self.assertEqual(clean[-1]["open_time"], cs[-2]["open_time"])
+        self.assertIn("UNCONFIRMED_CANDLE_DROPPED",
+                      [f["event_type"] for f in findings])
+
+    def test_closed_last_candle_kept(self):
+        cs = clean_series(5)
+        now = cs[-1]["open_time"] + HOUR  # دقیقاً لحظهٔ بسته‌شدن
+        clean, findings = integrity.audit_candles(
+            cs, interval_ms=HOUR, symbol="BTCUSDT", exchange="toobit",
+            timeframe="1h", data_asof_ms=cs[-1]["open_time"],
+            server_now_ms=now)
+        self.assertEqual(len(clean), 5)
+        self.assertNotIn("UNCONFIRMED_CANDLE_DROPPED",
+                         [f["event_type"] for f in findings])
+
+    def test_guard_off_keeps_old_behavior(self):
+        cs = clean_series(5)
+        clean, findings = integrity.audit_candles(
+            cs, interval_ms=HOUR, symbol="BTCUSDT", exchange="toobit",
+            timeframe="1h", data_asof_ms=cs[-1]["open_time"])
+        self.assertEqual(len(clean), 5)
+        self.assertNotIn("UNCONFIRMED_CANDLE_DROPPED",
+                         [f["event_type"] for f in findings])

@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import sys
+from datetime import datetime, timezone
 
 from . import sources as src
 from .contract import append_events, utc_iso_ms
@@ -78,10 +79,22 @@ def main(argv=None) -> int:
           f"انتخاب این چرخه: {len(symbols)}")
 
     # ۲) ممیزی سلامت داده قبل از هر تحلیلی — فقط کندل پاک به خوشه‌ها می‌رسد
+    # زمان واقعی سرور منبع: گارد کندل بسته‌نشده (بند ۵-۴ دستور MISSION 001)
+    srv = src.fetch_server_time()
+    if srv["ok"]:
+        server_now_ms = srv["server_time_ms"]
+        server_time_source = srv["source"]
+    else:
+        server_now_ms = int(datetime.now(tz=timezone.utc).timestamp() * 1000)
+        server_time_source = "local_utc_fallback"
+        print(f"  [serverTime] شکست: {srv.get('error')} — fallback ساعت محلی UTC")
+    print(f"  [serverTime] منبع: {server_time_source} | now={server_now_ms} — "
+          f"کندل بسته‌نشده حذف می‌شود (بند ۵-۴)")
     tasks = []
     klines_meta = {}
     integrity_findings = []
     clean_map = {}
+    dropped_open = 0
     for s in symbols:
         k = src.fetch_klines(s, args.interval, args.limit)
         if not k["ok"]:
@@ -92,8 +105,10 @@ def main(argv=None) -> int:
         clean, findings = audit_candles(
             k["candles"], interval_ms=interval_ms, symbol=s,
             exchange=k["source"], timeframe=args.interval,
-            data_asof_ms=data_asof)
+            data_asof_ms=data_asof, server_now_ms=server_now_ms)
         integrity_findings.extend(findings)
+        dropped_open += sum(1 for f in findings
+                            if f["event_type"] == "UNCONFIRMED_CANDLE_DROPPED")
         if not clean:
             klines_meta[s] = {"ok": False,
                               "errors": [{"error_type": "NO_VALID_CANDLES"}]}
@@ -207,6 +222,12 @@ def main(argv=None) -> int:
 
     # ۵) ماندگاری چرخه + یافته‌های L (dedup توسط قرارداد)
     report["integrity_findings"] = len(integrity_findings)
+    report["open_candle_guard"] = {
+        "enabled": True, "server_time_source": server_time_source,
+        "server_now_ms": server_now_ms,
+        "unconfirmed_candles_dropped": dropped_open,
+        "rule": "open_time + interval > server_now → کندل حذف (بند ۵-۴)",
+    }
     report["evaluator_global"] = global_metrics
     report["klines_meta"] = klines_meta
     report["universe"] = {"count": top["universe_count"],

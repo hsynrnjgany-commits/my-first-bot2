@@ -11,8 +11,12 @@ METHOD = "audit_candles/v1"
 
 def audit_candles(candles: list, *, interval_ms: int, symbol: str,
                   exchange: str, timeframe: str, data_asof_ms: int,
-                  task_id: str = None):
-    """خروجی: (clean, findings) — findings فهرست پیام قراردادی خوشهٔ L."""
+                  task_id: str = None, server_now_ms: int = None):
+    """خروجی: (clean, findings) — findings فهرست پیام قراردادی خوشهٔ L.
+    server_now_ms (زمان واقعی سرور منبع): اگر کندل آخر هنوز بسته نشده باشد
+    (open_time + interval > now)، حذف و به‌صورت یافته ثبت می‌شود — بند ۵-۴
+    دستور MISSION 001: کندل باز هرگز وارد سیگنال نمی‌شود.
+    server_now_ms=None → رفتار قدیمی (گارد خاموش؛ در گزارش ثبت می‌شود)."""
     findings = []
     clean = []
     seen_ts = set()
@@ -51,6 +55,24 @@ def audit_candles(candles: list, *, interval_ms: int, symbol: str,
             clean.append(c)
 
     clean.sort(key=lambda c: c["open_time"])
+
+    # بند ۵-۴: کندلِ در حال شکل‌گیری (بسته‌نشده) از انتهای سری حذف می‌شود.
+    if server_now_ms is not None and clean:
+        last = clean[-1]
+        closes_at = last["open_time"] + interval_ms
+        if closes_at > server_now_ms:
+            findings.append(make_message(
+                cluster_id="L", symbol=symbol, event_type="UNCONFIRMED_CANDLE_DROPPED",
+                event_time_ms=last["open_time"], data_asof_ms=data_asof_ms,
+                exchange=exchange, timeframe=timeframe,
+                features={"open_time": last["open_time"],
+                          "closes_at_ms": closes_at,
+                          "server_now_ms": server_now_ms},
+                evidence={"source": f"{exchange}.klines", "method": METHOD},
+                validation_status="OBSERVED", task_id=task_id,
+            ))
+            clean = clean[:-1]
+
     inversions = sum(
         1 for a, b in zip(candles, candles[1:])
         if b["open_time"] < a["open_time"]

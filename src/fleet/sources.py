@@ -12,6 +12,7 @@ USER_AGENT = "MARI-ReadOnly-Fleet/1.0"
 DEFAULT_TIMEOUT_SEC = 15
 
 TOOBIT_KLINES_URL = "https://api.toobit.com/quote/v1/klines"
+TOOBIT_TIME_URL = "https://api.toobit.com/api/v1/time"
 BINANCE_KLINES_URL = "https://api.binance.com/api/v3/klines"
 TOOBIT_TICKER24_URL = "https://api.toobit.com/quote/v1/ticker/24hr"
 TOOBIT_PRICE_URL = "https://api.toobit.com/quote/v1/ticker/price"
@@ -46,6 +47,20 @@ def _get_json(url: str, opener=None, timeout: float = DEFAULT_TIMEOUT_SEC):
         return json.loads(raw.decode("utf-8")), None
     except (UnicodeDecodeError, json.JSONDecodeError) as err:
         return None, {"error_type": "INVALID_JSON", "message": str(err)}
+
+
+def fetch_server_time(opener=None) -> dict:
+    """زمان واقعی سرور Toobit (عمومی) — برای گارد کندل بسته‌نشده (بند ۵-۴
+    دستور MISSION 001). شکست → ok=False؛ تماس‌گیرنده fallback محلی ثبت می‌کند."""
+    payload, err = _get_json(TOOBIT_TIME_URL, opener)
+    if err:
+        return {"ok": False, "error": err}
+    try:
+        return {"ok": True, "server_time_ms": int(payload["serverTime"]),
+                "source": "toobit/api-v1-time"}
+    except (KeyError, TypeError, ValueError) as conv_err:
+        return {"ok": False, "error": {"error_type": "PARSE_ERROR",
+                                       "message": str(conv_err)}}
 
 
 def parse_klines(payload) -> list:

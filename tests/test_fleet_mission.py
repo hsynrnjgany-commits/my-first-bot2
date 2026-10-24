@@ -182,3 +182,38 @@ def test_save_mission_report_atomic():
         assert json.load(open(path, encoding="utf-8"))["version"] \
             == MISSION_VERSION
         assert not os.path.exists(path + ".tmp")
+
+
+def _write_snapshot(tmp, rows):
+    json.dump({"schema": "mari.registry/v1", "rows": rows},
+              open(os.path.join(tmp, "global-assets-snapshot.json"), "w",
+                   encoding="utf-8"), ensure_ascii=False)
+
+
+def test_bos_volume_evidence_from_snapshot():
+    """بند ۷: نامزد BOS باید شواهد حجم واقعی اسنپ‌شات را بگیرد — نه پرچم ناشناخته."""
+    t = 1_730_000_000_000
+    with tempfile.TemporaryDirectory() as tmp:
+        _write_snapshot(tmp, [{"asset_id": "BTCUSDT",
+                               "identity": "cex:toobit:spot:BTCUSDT",
+                               "volume_24h_usd": 5_000_000.0}])
+        cycle = load_cycle(tmp)
+        cycle["events"] = [_bos(t=t)]
+        ranked = rank_opportunities(cycle)
+        assert ranked["confirmed"] == 1
+        row = ranked["top"][0]
+        assert row["score_parts"]["liquidity_cost"] == 15
+        assert row["risk_flags"] is None
+
+
+def test_stale_bos_excluded_by_freshness():
+    """BOS کهنهٔ ۴۸ ساعته فرصتِ فعلی نیست — فقط BOS تازهٔ ۲۴ ساعت."""
+    now = 1_730_000_000_000
+    old = _bos(event_id="old", t=now - 48 * 3600 * 1000)
+    fresh = _bos(event_id="fresh", symbol="ETHUSDT", t=now - 1 * 3600 * 1000)
+    with tempfile.TemporaryDirectory() as tmp:
+        cycle = load_cycle(tmp)
+        cycle["events"] = [old, fresh]
+        ranked = rank_opportunities(cycle)
+        assert ranked["candidates"] == 1
+        assert ranked["top"][0]["symbol"] == "ETHUSDT"
