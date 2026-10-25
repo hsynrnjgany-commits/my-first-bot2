@@ -12,6 +12,7 @@ import sys
 from datetime import datetime, timezone
 
 from . import sources as src
+from . import exclusions
 from .contract import append_events, utc_iso_ms
 from .crossmarket import CrossMarketCluster
 from .derivatives import DerivativesCluster
@@ -77,6 +78,17 @@ def main(argv=None) -> int:
     print(f"دنیای کشف‌شده از منبع: {top['universe_count']} نماد | "
           f"منبع: {top['source']} | تا {utc_iso_ms(top['asof_ms'])} | "
           f"انتخاب این چرخه: {len(symbols)}")
+
+    # ۱-ب) فهرست استثنای مالک — نمادهای نامعتبر منبع هرگز تحلیل نمی‌شوند
+    exf = exclusions.filter_symbols(symbols, source=top.get("source",
+                                                           "toobit"))
+    for ex_row in exf["excluded"]:
+        print(f"  [excluded] {ex_row['symbol']}: {ex_row['reason']} — "
+              f"{ex_row['evidence']}")
+    symbols = exf["kept"]
+    if exf["excluded"]:
+        print(f"  [excluded] {len(exf['excluded'])} نماد حذف شد — "
+              f"انتخاب مؤثر این چرخه: {len(symbols)}")
 
     # ۲) ممیزی سلامت داده قبل از هر تحلیلی — فقط کندل پاک به خوشه‌ها می‌رسد
     # زمان واقعی سرور منبع: گارد کندل بسته‌نشده (بند ۵-۴ دستور MISSION 001)
