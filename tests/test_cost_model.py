@@ -130,6 +130,13 @@ class TestScenarios(unittest.TestCase):
         decays = [r["edge_decayed_pct"] for r in grid["rows"]]
         for i in range(1, len(decays)):
             self.assertGreaterEqual(decays[i], decays[i - 1])
+        # ستون مطلق: دلتای هر ردیف نسبت به خط پایه باید دقیق و نانوصعودی باشد
+        base_sum_adj = grid["baseline_zero_cost"]["sum_net_pct"]
+        for r in grid["rows"]:
+            self.assertAlmostEqual(r["delta_sum_net_pp"],
+                                   round(r["sum_net_pct"] - base_sum_adj, 6),
+                                   places=6)
+            self.assertLessEqual(r["delta_sum_net_pp"], 0.0)
 
 
 class TestBreakEven(unittest.TestCase):

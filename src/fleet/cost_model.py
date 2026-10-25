@@ -129,7 +129,11 @@ def scenario_grid(trades: list, *, spread_bps: float,
                 and m["sum_net_pct"] is not None:
             decay = round(100.0 * (1.0 - m["sum_net_pct"]
                                    / base["sum_net_pct"]), 4)
-        rows.append(dict(slippage_bps=slip, **m, edge_decayed_pct=decay))
+        delta = None
+        if base["sum_net_pct"] is not None and m["sum_net_pct"] is not None:
+            delta = round(m["sum_net_pct"] - base["sum_net_pct"], 6)
+        rows.append(dict(slippage_bps=slip, **m, edge_decayed_pct=decay,
+                         delta_sum_net_pp=delta))
     return {"baseline_zero_cost": base, "rows": rows}
 
 
@@ -185,6 +189,8 @@ def cost_report(candles_map: dict, trades: list, *,
             "پوشش هزینه منطق برخورد TP/SL را عوض نمی‌کند؛ برخوردهای مرزی در "
             "اجرای واقعی ممکن است برعکس شوند",
             "فاندینگ، تأخیر پرکردن و تفاوت نقدشوندگی نمادها مدل نشده است",
+            "edge_decayed_pct بالای ۱۰۰٪ یعنی لبه نه‌تنها فرسوده بلکه وارونه "
+            "شده است (جمع خالص منفی)؛ ستون مطلق delta_sum_net_pp مبنا باشد",
             "خروجی فقط REPORTED است — هیچ آستانه‌ای موفقیت جعل نشده",
         ],
     }
