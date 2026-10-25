@@ -13,7 +13,7 @@ PKG_NAME = "mari_fleet"
 SUBMODULES = (
     "contract", "sources", "integrity", "structure", "volume", "liquidity",
     "sessions", "derivatives", "crossmarket", "risk", "evaluator",
-    "orchestrator", "quant", "scan", "onchain", "strategy_lab",
+    "orchestrator", "quant", "scan", "onchain", "strategy_lab", "cost_model",
 )
 
 
