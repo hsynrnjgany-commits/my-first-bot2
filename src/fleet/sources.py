@@ -5,6 +5,7 @@
 
 import json
 import socket
+import time
 import urllib.error
 import urllib.request
 
@@ -26,6 +27,41 @@ OKX_TICKER_URL = "https://www.okx.com/api/v5/market/ticker"
 
 # بازهٔ «1h» با پروب واقعی روی هر دو منبع تأیید شد (۱۰۰تایی از Toobit و Binance)
 INTERVALS = ("15m", "30m", "1h", "2h", "4h", "6h", "12h", "1d")
+
+# اصلاح A-1 گزارش MISSION 002: گارد «سری منجمد» — اگر آخرین کندل بستهٔ منبع
+# قدیمی‌تر از 24×interval باشد، داده به‌عنوان STALE_FROZEN_SERIES رد می‌شود و
+# دیگر با ok=true و data_asof باستانی وارد تحلیل نمی‌شود.
+FROZEN_MAX_AGE_INTERVALS = 24
+
+OKX_INSTRUMENTS_URL = "https://www.okx.com/api/v5/public/instruments"
+_OKX_INST_CACHE = {"insts": None, "fetched_at": 0.0}
+
+
+def is_stale_series(candles: list, interval_ms: int, now_ms: "int | None",
+                    max_age_intervals: int = FROZEN_MAX_AGE_INTERVALS) -> bool:
+    """True فقط وقتی now_ms داده شده و آخرین کندل بسته از 24×interval قدیمی‌تر است.
+    now_ms=None → گارد خاموش (رفتار قدیمی؛ سازگار با آزمون‌های آفلاین)."""
+    if not candles or not now_ms or not interval_ms:
+        return False
+    last_closed_at = candles[-1]["open_time"] + interval_ms
+    return last_closed_at < now_ms - max_age_intervals * interval_ms
+
+
+def okx_spot_insts(opener=None, ttl_sec: float = 3600.0) -> "set | None":
+    """فهرست instIdهای SPOT او‌اکس — یک تماس در هر فرایند (کش پردازشی، ttl 1h).
+    شکست تماس → None (رفتار قدیمی: تماس مستقیم klines) — صادقانه، بدون ساخت فهرست جعلی."""
+    now = time.time()
+    if _OKX_INST_CACHE["insts"] is not None and \
+            now - _OKX_INST_CACHE["fetched_at"] < ttl_sec:
+        return _OKX_INST_CACHE["insts"]
+    payload, err = _get_json(f"{OKX_INSTRUMENTS_URL}?instType=SPOT", opener)
+    if err or not isinstance(payload, dict):
+        return _OKX_INST_CACHE["insts"]
+    insts = {r.get("instId") for r in payload.get("data") or []
+             if isinstance(r, dict) and r.get("instId")}
+    if insts:
+        _OKX_INST_CACHE.update(insts=insts, fetched_at=now)
+    return insts or None
 
 
 def _get_json(url: str, opener=None, timeout: float = DEFAULT_TIMEOUT_SEC):
@@ -121,19 +157,34 @@ def parse_okx_klines(payload) -> list:
 
 
 def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200,
-                 opener=None) -> dict:
-    """زنجیرهٔ منابع: Toobit → Binance → Bybit → OKX. شکست هر منبع ثبت و ادامه."""
+                 opener=None, now_ms: "int | None" = None,
+                 max_age_intervals: int = FROZEN_MAX_AGE_INTERVALS) -> dict:
+    """زنجیرهٔ منابع: Toobit → Binance → Bybit → OKX. شکست هر منبع ثبت و ادامه.
+    now_ms داده شود → سری منجمد (اصلاح A-1) رد و به منبع بعدی می‌رود؛
+    اگر همهٔ منابع کهنه باشند → ok=False با STALE_FROZEN_SERIES (asof واقعی حفظ می‌شود).
+    اصلاح C-1: نماد OKX پیش از تماس با فهرست instruments اعتبارسنجی می‌شود."""
+    interval_ms = {"15m": 900_000, "30m": 1_800_000, "1h": 3_600_000,
+                   "2h": 7_200_000, "4h": 14_400_000, "6h": 21_600_000,
+                   "12h": 43_200_000, "1d": 86_400_000}.get(interval, 0)
     errors = []
     okx_inst = to_okx_inst(symbol)
+    okx_allowed = True
+    if okx_inst:
+        insts = okx_spot_insts(opener)
+        if insts is not None and okx_inst not in insts:
+            okx_allowed = False  # pre-validation: تماس قطعاً ناموجود حذف شد
     targets = (
         ("toobit", f"{TOOBIT_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}", parse_klines),
         ("binance", f"{BINANCE_KLINES_URL}?symbol={symbol}&interval={interval}&limit={limit}", parse_klines),
         ("bybit", f"{BYBIT_KLINES_URL}?category=spot&symbol={symbol}&interval=60&limit={limit}", parse_bybit_klines),
-        ("okx", f"{OKX_KLINES_URL}?instId={okx_inst}&bar=1H&limit={limit}" if okx_inst else None, parse_okx_klines),
+        ("okx", f"{OKX_KLINES_URL}?instId={okx_inst}&bar=1H&limit={limit}"
+         if (okx_inst and okx_allowed) else None, parse_okx_klines),
     )
     for name, url, parser in targets:
         if not url:
-            errors.append({"source": name, "error_type": "SYMBOL_UNSUPPORTED"})
+            errors.append({"source": name, "error_type":
+                           "SYMBOL_UNSUPPORTED_PREVALIDATED" if name == "okx"
+                           and okx_inst and not okx_allowed else "SYMBOL_UNSUPPORTED"})
             continue
         payload, err = _get_json(url, opener)
         if err:
@@ -146,6 +197,14 @@ def fetch_klines(symbol: str, interval: str = "1h", limit: int = 200,
                            "message": str(parse_err)})
             continue
         if candles:
+            if is_stale_series(candles, interval_ms, now_ms, max_age_intervals):
+                errors.append({"source": name,
+                               "error_type": "STALE_FROZEN_SERIES",
+                               "last_open_time": candles[-1]["open_time"],
+                               "age_intervals": round(
+                                   (now_ms - (candles[-1]["open_time"] + interval_ms))
+                                   / interval_ms, 1) if interval_ms else None})
+                continue  # سری یخ‌زده → منبع بعدی
             return {"ok": True, "candles": candles, "source": name,
                     "errors": errors}
         errors.append({"source": name, "error_type": "EMPTY_PAYLOAD"})

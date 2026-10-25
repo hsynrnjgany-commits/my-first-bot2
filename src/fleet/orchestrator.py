@@ -31,7 +31,7 @@ class Orchestrator:
         self.max_retries = max_retries
         self.state_dir = state_dir
         self.now_ms = now_ms or _utc_now_ms
-        self._processed = set()
+        self._processed = {}  # tid → first_seen_ms (اصلاح C-3)؛ None برای legacy
         self._load_processed()
 
     # ---------- مدیریت دامنهٔ پردازش‌شده (ضد تکرار) ----------
@@ -47,16 +47,28 @@ class Orchestrator:
         if path and os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as fh:
-                    self._processed = set(json.load(fh))
+                    raw = json.load(fh)
             except (json.JSONDecodeError, OSError):
-                self._processed = set()  # دفتر خراب = از نو؛ گزارش می‌شود
+                self._processed = {}  # دفتر خراب = از نو؛ گزارش می‌شود
+                return
+            # اصلاح C-3 گزارش MISSION 002: نگاشت tid→first_seen_ms؛ فرمت قدیمی
+            # (فهرست رشته) هم خوانده می‌شود با first_seen=None (صادقانه، نه حدس).
+            if isinstance(raw, dict):
+                self._processed = {str(k): raw[k] for k in raw}
+            elif isinstance(raw, list):
+                self._processed = {str(t): None for t in raw}
+            else:
+                self._processed = {}
 
     def _persist_processed(self):
         path = self._processed_path()
         if not path:
             return
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        keep = list(self._processed)[-PROCESSED_CAP:]
+        # نگه‌داشتن جدیدترین‌ها بر اساس first_seen (None‌ها قدیمی‌ترین فرض می‌شوند)
+        ordered = sorted(self._processed.items(),
+                         key=lambda kv: kv[1] if isinstance(kv[1], int) else 0)
+        keep = dict(ordered[-PROCESSED_CAP:])
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(keep, fh)
 
@@ -78,13 +90,16 @@ class Orchestrator:
         })
 
     def run_cycle(self, tasks: list) -> dict:
-        """tasks: [{"cluster_id","symbol","candles","ctx"}] — خروجی چرخهٔ کامل."""
+        """tasks: [{"cluster_id","symbol","candles","ctx"}] — خروجی چرخهٔ کامل.
+        اصلاح B-1/C-3 گزارش MISSION 002: هر skip با ریشه و شناسه ثبت می‌شود
+        تا «تکراری» دیگر علت پنهان (مثل سری منجمد) را پوشش نکند."""
         cycle_id = uuid.uuid4().hex[:12]
         started = self.now_ms()
         events = []
         errors = []
         skipped = 0
         executed = 0
+        skipped_details = []
 
         for task in tasks:
             cluster = self.clusters.get(task["cluster_id"])
@@ -99,6 +114,13 @@ class Orchestrator:
                                ctx.get("data_asof_ms", 0))
             if tid in self._processed:
                 skipped += 1
+                skipped_details.append({
+                    "task_id": tid, "cluster_id": cluster.cluster_id,
+                    "symbol": task.get("symbol"),
+                    "data_asof_ms": ctx.get("data_asof_ms"),
+                    "first_seen_ms": self._processed.get(tid),
+                    "reason": "DUPLICATE_PREVIOUSLY_PROCESSED",
+                })
                 continue
 
             attempts = 0
@@ -119,7 +141,7 @@ class Orchestrator:
                 h["runs_ok"] += 1
                 h["retries_used"] = attempts
                 h["last_ok"] = utc_iso_ms(self.now_ms())
-                self._processed.add(tid)
+                self._processed[tid] = self.now_ms()  # اصلاح C-3: مهر زمانی per-tid
             else:
                 h["status"] = "ERROR"
                 h["runs_failed"] += 1
@@ -137,6 +159,9 @@ class Orchestrator:
             "tasks_total": len(tasks),
             "tasks_executed": executed,
             "tasks_skipped_duplicate": skipped,
+            "tasks_skipped_detail": skipped_details[-200:],
+            "processed_first_seen_ms_available": any(
+                isinstance(v, int) for v in self._processed.values()),
             "events_collected": len(events),
             "errors": errors,
             "health": self.health,

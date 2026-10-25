@@ -83,7 +83,10 @@ def simulate_trades(candles: list, events: list, *, symbol: str,
 
 
 def evaluate(trades: list, *, min_samples: int = MIN_SAMPLES) -> dict:
-    """سنجه‌های واقعی از معاملات شبیه‌سازی‌شده — بدون ادعای موفقیت."""
+    """سنجه‌های واقعی از معاملات شبیه‌سازی‌شده — بدون ادعای موفقیت.
+    اصلاح A-2 گزارش MISSION 002: سنجه‌های بالادستی (win_rate/kelly/MDD) از
+    توزیع مختلط realized+OPEN محاسبه می‌شدند؛ اکنون بلوک «realized» جداگانه
+    فقط روی معاملات بسته (TP/SL) و MDD به‌صورت زمان‌مرتب گزارش می‌شود."""
     n = len(trades)
     nets = [t["net_pct"] for t in trades]
     wins = sum(1 for x in nets if x > 0)
@@ -92,6 +95,36 @@ def evaluate(trades: list, *, min_samples: int = MIN_SAMPLES) -> dict:
     profit_factor = (gross_win / gross_loss) if gross_loss > 0 else None
     dd = risk_mod.max_drawdown(
         [sum(nets[:i + 1]) for i in range(n)]) if n else {"max_dd": 0.0}
+    # ---- بلوک realized (فقط بسته‌ها) — مبنای هر تصمیم ----
+    closed = [t for t in trades if t.get("exit_reason") in ("TP", "SL")]
+    closed_nets = [t["net_pct"] for t in closed]
+    ordered = sorted(closed, key=lambda t: t.get("entry_time_ms", 0))
+    curve_pp = []
+    acc = 0.0
+    peak_abs = 0.0
+    mdd_pp = 0.0
+    for t in ordered:
+        acc += t["net_pct"]
+        curve_pp.append(acc)
+        peak_abs = max(peak_abs, acc)
+        mdd_pp = max(mdd_pp, peak_abs - acc)  # افت مطلق (واحد: pp)
+    dd_rel_time = risk_mod.max_drawdown(curve_pp) if curve_pp \
+        else {"max_dd": 0.0}
+    c_n = len(closed_nets)
+    c_wins = sum(1 for x in closed_nets if x > 0)
+    c_gw = sum(x for x in closed_nets if x > 0)
+    c_gl = abs(sum(x for x in closed_nets if x < 0))
+    realized = {
+        "n_closed": c_n,
+        "profit_factor": round(c_gw / c_gl, 4) if c_gl > 0
+        else (None if c_gw == 0 else "UNDEFINED_NO_LOSSES"),
+        "win_rate": round(c_wins / c_n, 4) if c_n else None,
+        "avg_net_pct": round(sum(closed_nets) / c_n, 6) if c_n else None,
+        "sum_net_pct": round(sum(closed_nets), 6) if c_n else None,
+        "kelly_fraction_paper": kelly_fraction_paper(closed_nets) if c_n else None,
+        "t_stat": t_stat(closed_nets) if c_n else None,
+        "note": "فقط TP/SL؛ معاملات OPEN (نشانه‌گذاری‌نشده) در این بلوک نیستند",
+    }
     result = {
         "n": n,
         "min_samples_required": min_samples,
@@ -100,6 +133,11 @@ def evaluate(trades: list, *, min_samples: int = MIN_SAMPLES) -> dict:
         "win_rate": round(wins / n, 4) if n else None,
         "avg_net_pct": round(sum(nets) / n, 6) if n else None,
         "max_drawdown_curve": round(dd["max_dd"], 6),
+        "max_drawdown_pp_time_ordered": round(mdd_pp, 6),
+        "max_drawdown_rel_time_ordered": round(dd_rel_time["max_dd"], 6),
+        "realized": realized,
+        "metrics_semantics": "win_rate/kelly بالادستی شامل OPENهاست (marked)؛ "
+                             "هر تصمیم فقط بر بلوک realized بنا شود",
         "avg_mfe_pct": round(sum(t["mfe_pct"] for t in trades) / n, 6) if n else None,
         "avg_mae_pct": round(sum(t["mae_pct"] for t in trades) / n, 6) if n else None,
         "exit_mix": {

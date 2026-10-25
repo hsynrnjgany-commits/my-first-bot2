@@ -138,11 +138,21 @@ def load_event_ids(path: str) -> set:
 
 
 def append_events(path: str, events: list) -> dict:
-    """افزودن رویداد با حذف تکرار نسبت به دفتر موجود. هرگز بازنویسی نمی‌کند."""
+    """افزودن رویداد با حذف تکرار نسبت به دفتر موجود. هرگز بازنویسی نمی‌کند.
+    اصلاح B-6 گزارش MISSION 002: شناسهٔ رویدادهای dedup-شده برگردانده می‌شود تا
+    ورودی واقعی شبیه‌ساز/مصرف‌کننده‌ها همیشه از گزارش چرخه قابل بازسازی باشد."""
     existing = load_event_ids(path)
     fresh = filter_new(events, existing)
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     with open(path, "a", encoding="utf-8") as fh:
         for e in fresh:
             fh.write(json.dumps(e, ensure_ascii=False, sort_keys=True) + "\n")
-    return {"written": len(fresh), "duplicates_skipped": len(events) - len(fresh)}
+    fresh_ids = {e["event_id"] for e in fresh}
+    duplicate_ids = []
+    for e in events:
+        eid = e.get("event_id")
+        if eid not in fresh_ids and eid not in duplicate_ids:
+            duplicate_ids.append(eid)
+    return {"written": len(fresh), "duplicates_skipped": len(events) - len(fresh),
+            "duplicate_event_ids": duplicate_ids[:100],
+            "duplicate_event_ids_truncated": max(0, len(duplicate_ids) - 100)}
